@@ -4,7 +4,8 @@ import gym
 import numpy as np
 from argparse import Namespace
 from pyglet.gl import GL_LINES
-
+from src.agent import Agent
+from src.dummy_agent import DummyAgent
 
 NUM_AGENTS = 1
 NUM_BEAMS = 1080
@@ -59,7 +60,7 @@ def update_beam_gl_lines(obs):
         gl_line.vertices = [car_x * 50, car_y * 50, end_x * 50, end_y * 50]
 
 
-def run_environment(config: Namespace):
+def run_environment(config: Namespace, agent: Agent):
     env = gym.make(
         "f110_gym:f110-v0",
         map=config.map_path,
@@ -76,7 +77,7 @@ def run_environment(config: Namespace):
     env.render()
 
     while not done:
-        speed, steer = 0.5, 0.1
+        speed, steer = agent.take_action(obs)
         obs, step_reward, done, info = env.step(np.array([[steer, speed]]))
 
         update_beam_gl_lines(obs)
@@ -85,7 +86,8 @@ def run_environment(config: Namespace):
 
 def main():
     config = load_map_config("circle")
-    run_environment(config)
+    agent = DummyAgent()
+    run_environment(config, agent)
 
 
 if __name__ == "__main__":
