@@ -7,6 +7,9 @@ openai gym > f1tenth_gym > f1tenth_gym_ros > ws24_racing
 
 #### Running this repo
 ```bash
+# Use this fork (exposes lidar params and env is compatable with SB3)
+git clone git@github.com:220usamaahmed/f1tenth_gym.git
+
 conda create --name f1tenth python=3.8
 conda activate f1tenth
 
