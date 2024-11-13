@@ -1,0 +1,7 @@
+circle:
+  map_path: './maps/circle/circle'
+  map_ext: '.png'
+  starting_x: 5.75
+  starting_y: 0
+  starting_theta: 1.57
+
