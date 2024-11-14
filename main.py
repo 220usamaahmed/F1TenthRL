@@ -4,7 +4,9 @@ from argparse import Namespace
 from src.agent import Agent
 from src.dummy_agent import DummyAgent
 from src.f110_sb_env import F110_SB_Env
+from src.feature_extractor import CustomCombinedExtractor
 from stable_baselines3 import PPO
+
 
 NUM_AGENTS = 1
 LIDAR_NUM_BEAMS = 32
@@ -45,15 +47,38 @@ def run_environment(env: F110_SB_Env, model):
             break
 
 
+def create_model(env):
+    policy_kwargs = {
+        "features_extractor_class": CustomCombinedExtractor,
+        "features_extractor_kwargs": {"features_dim": 256},
+        "net_arch": [dict(pi=[128, 64], vf=[128, 64])],
+    }
+
+    model = PPO(
+        "MultiInputPolicy",
+        env,
+        policy_kwargs=policy_kwargs,
+        verbose=1,
+        learning_rate=0.0003,
+        n_steps=2048,
+        batch_size=64,
+        n_epochs=10,
+        gamma=0.99,
+        # tensorboard_log="./tensorboard_logs/",
+    )
+
+    return model
+
+
 def main():
     # TODO: Get agent and map from command line arguments
     config = load_map_config("circle")
     env = build_env(config)
 
-    model = PPO("MultiInputPolicy", env, verbose=1)
+    model = create_model(env)
     model.learn(total_timesteps=10)
 
-    run_environment(env, model)
+    # run_environment(env, model)
 
     # agent = DummyAgent()
     # run_environment(env, agent)
