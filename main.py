@@ -64,7 +64,7 @@ def create_model(env):
         batch_size=64,
         n_epochs=10,
         gamma=0.99,
-        # tensorboard_log="./tensorboard_logs/",
+        tensorboard_log="./tensorboard_logs/",
     )
 
     return model
@@ -76,7 +76,7 @@ def main():
     env = build_env(config)
 
     model = create_model(env)
-    model.learn(total_timesteps=10)
+    model.learn(total_timesteps=1000)
 
     # run_environment(env, model)
 
