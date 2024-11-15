@@ -17,17 +17,20 @@ class F110_SB_Env(gymnasium.Env):
         map: str,
         map_ext: str,
         lidar_params: typing.Dict,
-        reset_pose: typing.Tuple[float, float],
+        reset_pose: typing.Tuple[float, float, float],
+        record_actions=False,
     ):
         self.map = map
         self.map_ext = map_ext
         self.lidar_params = lidar_params
         self.reset_pose = reset_pose
+        self.record_actions = record_actions
 
         self._beam_rendering_enabled = False
         self._num_beams = lidar_params.get("num_beams", F110_SB_Env.DEFAULT_NUM_BEAMS)
         self._fov = lidar_params.get("fov", F110_SB_Env.DEFAULT_FOV)
         self._beam_gl_lines = []
+        self._recorded_actions = [[]]
 
         self.action_space = self._define_action_space()
         self.observation_space = self._define_observation_space()
@@ -36,9 +39,8 @@ class F110_SB_Env(gymnasium.Env):
 
     def _define_action_space(self):
         return Box(
-            low=np.array([[-0.1, -0.1]]),
-            high=np.array([[0.1, 0.1]]),
-            shape=(1, 2),
+            low=np.array([-1, -1]),
+            high=np.array([1, 1]),
             dtype=np.float32,
         )
 
@@ -118,11 +120,17 @@ class F110_SB_Env(gymnasium.Env):
     def reset(self, *, seed=None, options=None):
         obs, _, _, info = self.env.reset(np.array([self.reset_pose]))
 
+        # TODO: Reset is called before training so there is an extra empty list
+        if self.record_actions:
+            self._recorded_actions.append([])
+
         return self._transform_obs_for_sb(obs), info
 
     def step(self, action):
-        print("action", action)
-        obs, step_reward, done, info = self.env.step(np.array(action))
+        if self.record_actions:
+            self._recorded_actions[-1].append(action)
+
+        obs, step_reward, done, info = self.env.step(np.array([action]))
 
         if self._beam_rendering_enabled:
             self._update_beam_gl_lines(obs)
@@ -135,3 +143,8 @@ class F110_SB_Env(gymnasium.Env):
             self.env.render()
         else:
             self.env.render(mode)
+
+    def get_recorded_actions(self):
+        assert self.record_actions, "Env not configured to record actions"
+
+        return self._recorded_actions

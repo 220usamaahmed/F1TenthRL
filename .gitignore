@@ -2,3 +2,4 @@
 **/__pycache__
 
 tensorboard_logs/
+action_recordings/

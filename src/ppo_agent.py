@@ -1,7 +1,8 @@
 import typing
 from src.agent import Agent
-from stable_baselines3 import PPO
 from src.feature_extractor import CustomCombinedExtractor
+import numpy as np
+from stable_baselines3 import PPO
 
 
 class PPOAgent(Agent):
@@ -31,7 +32,7 @@ class PPOAgent(Agent):
 
         return model
 
-    def take_action(self, obs: typing.Dict) -> typing.List[typing.List[float]]:
+    def take_action(self, obs: typing.Dict) -> np.ndarray:
         action, _state = self._model.predict(obs)
         return action
 
