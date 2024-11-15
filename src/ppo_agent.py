@@ -14,7 +14,7 @@ class PPOAgent(Agent):
         policy_kwargs = {
             "features_extractor_class": CustomCombinedExtractor,
             "features_extractor_kwargs": {"features_dim": 256},
-            "net_arch": [dict(pi=[128, 64], vf=[128, 64])],
+            "net_arch": dict(pi=[128, 64], vf=[128, 64]),
         }
 
         model = PPO(
@@ -37,4 +37,4 @@ class PPOAgent(Agent):
         return action
 
     def learn(self):
-        self._model.learn(total_timesteps=1000)
+        self._model.learn(total_timesteps=100000)

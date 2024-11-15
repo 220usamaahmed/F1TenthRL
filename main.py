@@ -1,5 +1,6 @@
 import typing
 import yaml
+from datetime import datetime
 from argparse import Namespace
 import os
 import numpy as np
@@ -35,19 +36,33 @@ def build_env(config: Namespace, enable_action_recording=False) -> F110_SB_Env:
     )
 
 
-def run_environment(env: F110_SB_Env, agent: Agent, verbose=False):
+def run_environment(
+    env: F110_SB_Env, agent: Agent, verbose=False, max_timesteps=np.inf
+):
 
     obs, info = env.reset()
     env.enable_beam_rendering()
     env.render()
 
+    t = 0
+
     while True:
+        if t > max_timesteps:
+            break
+        t += 1
+
         action = agent.take_action(obs)
         obs, step_reward, done, truncated, info = env.step(action)
         env.render(mode="human")
 
         if verbose:
-            print(obs)
+            print(f"--- t = {t:03} {'-' * 16}")
+            print("Action", action)
+            # print("Velocity X", obs["linear_vel_x"])
+            # print("Velocity Y", obs["linear_vel_y"])
+            # print("Angular Velocity Z", obs["angular_vel_z"])
+            print("Reward", step_reward)
+            print("Done", done)
 
         if done:
             break
@@ -73,22 +88,28 @@ def main():
 
     # Dummy agent
     # dummy_agent = DummyAgent()
+    # run_environment(env, dummy_agent, verbose=True)
 
     # PPO agent (having issues with inf)
-    # try:
-    #     ppo_agent = PPOAgent(env)
-    #     ppo_agent.learn()
-    # except:
-    #     print("Learning failed.")
-    #     print("Actions recoreded")
-    #
-    #     save_recording("ppo_agent_inf_issue", env.get_recorded_actions())
+    try:
+        ppo_agent = PPOAgent(env)
+        ppo_agent.learn()
+    except:
+        print("Learning failed.")
+        if env.record_actions:
+            save_recording(
+                f"ppo_agent_inf_issue-{datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}",
+                env.get_recorded_actions(),
+            )
+        return
+    run_environment(env, ppo_agent, verbose=True, max_timesteps=500)
+    run_environment(env, ppo_agent, verbose=True)
 
     # Playback agent (investigating PPO inf issue)
-    playback_agent = PlaybackAgent(
-        recording_path="./action_recordings/ppo_agent_inf_issue/episode_1.csv"
-    )
-    run_environment(env, playback_agent, verbose=True)
+    # playback_agent = PlaybackAgent(
+    #     recording_path="./action_recordings/ppo_agent_inf_issue/episode_1.csv"
+    # )
+    # run_environment(env, playback_agent, verbose=True, max_timesteps=1000)
 
 
 if __name__ == "__main__":

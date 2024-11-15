@@ -31,6 +31,7 @@ class F110_SB_Env(gymnasium.Env):
         self._fov = lidar_params.get("fov", F110_SB_Env.DEFAULT_FOV)
         self._beam_gl_lines = []
         self._recorded_actions = [[]]
+        self._previous_action = None
 
         self.action_space = self._define_action_space()
         self.observation_space = self._define_observation_space()
@@ -39,8 +40,8 @@ class F110_SB_Env(gymnasium.Env):
 
     def _define_action_space(self):
         return Box(
-            low=np.array([-1, -1]),
-            high=np.array([1, 1]),
+            low=np.array([-1, -10]),
+            high=np.array([1, 10]),
             dtype=np.float32,
         )
 
@@ -52,9 +53,9 @@ class F110_SB_Env(gymnasium.Env):
         return Dict(
             {
                 "scan": Box(low=0, high=30, shape=(self._num_beams,), dtype=np.float32),
-                "linear_vel_x": Box(low=-10, high=10, shape=(), dtype=np.float32),
-                "linear_vel_y": Box(low=-10, high=10, shape=(), dtype=np.float32),
-                "angular_vel_z": Box(low=-10, high=10, shape=(), dtype=np.float32),
+                # "linear_vel_x": Box(low=-10, high=10, shape=(), dtype=np.float32),
+                # "linear_vel_y": Box(low=-10, high=10, shape=(), dtype=np.float32),
+                # "angular_vel_z": Box(low=-10, high=10, shape=(), dtype=np.float32),
             }
         )
 
@@ -66,7 +67,8 @@ class F110_SB_Env(gymnasium.Env):
             num_agents=1,
             lidar_params=self.lidar_params,
             timestep=0.01,
-            integrator=Integrator.RK4,
+            # integrator=Integrator.RK4,
+            integrator=Integrator.Euler,
         )
         self.env.add_render_callback(self._render_callback)
 
@@ -103,10 +105,22 @@ class F110_SB_Env(gymnasium.Env):
     def _transform_obs_for_sb(self, obs):
         return {
             "scan": obs["scans"][0],
-            "linear_vel_x": obs["linear_vels_x"][0],
-            "linear_vel_y": obs["linear_vels_y"][0],
-            "angular_vel_z": obs["ang_vels_z"][0],
+            # "linear_vel_x": obs["linear_vels_x"][0],
+            # "linear_vel_y": obs["linear_vels_y"][0],
+            # "angular_vel_z": obs["ang_vels_z"][0],
         }
+
+    def _shape_reward(self, env_reward, obs):
+        reward = env_reward
+
+        if obs["collisions"][0] == 1.0:
+            reward = -1
+        else:
+            velocity = obs["linear_vels_x"][0]
+            angular_velocity = obs["ang_vels_z"][0]
+            reward += 0.1 * velocity - 0.1 * angular_velocity
+
+        return reward
 
     def enable_beam_rendering(self):
         self._beam_rendering_enabled = True
@@ -127,6 +141,12 @@ class F110_SB_Env(gymnasium.Env):
         return self._transform_obs_for_sb(obs), info
 
     def step(self, action):
+        if self._previous_action is None:
+            self._previous_action = action
+        else:
+            d = 0.95
+            action = self._previous_action * d + action * (1 - d)
+
         if self.record_actions:
             self._recorded_actions[-1].append(action)
 
@@ -135,8 +155,9 @@ class F110_SB_Env(gymnasium.Env):
         if self._beam_rendering_enabled:
             self._update_beam_gl_lines(obs)
 
-        # TODO: Pass truncated based on collison info
-        return self._transform_obs_for_sb(obs), step_reward, done, done, info
+        transformed_obs = self._transform_obs_for_sb(obs)
+        shaped_reward = self._shape_reward(step_reward, obs)
+        return transformed_obs, shaped_reward, done, done, info
 
     def render(self, mode: typing.Optional[str] = None):
         if mode is None:
