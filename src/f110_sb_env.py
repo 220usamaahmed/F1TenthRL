@@ -18,14 +18,13 @@ class F110_SB_Env(gymnasium.Env):
         map_ext: str,
         lidar_params: typing.Dict,
         reset_pose: typing.Tuple[float, float],
-        disable_rendering=True,
     ):
         self.map = map
         self.map_ext = map_ext
         self.lidar_params = lidar_params
         self.reset_pose = reset_pose
-        self.disable_rendering = disable_rendering
 
+        self._beam_rendering_enabled = False
         self._num_beams = lidar_params.get("num_beams", F110_SB_Env.DEFAULT_NUM_BEAMS)
         self._fov = lidar_params.get("fov", F110_SB_Env.DEFAULT_FOV)
         self._beam_gl_lines = []
@@ -36,7 +35,12 @@ class F110_SB_Env(gymnasium.Env):
         self._initialize_f110_gym()
 
     def _define_action_space(self):
-        return Box(low=-1, high=1, shape=(1, 2), dtype=np.float32)
+        return Box(
+            low=np.array([[-0.1, -0.1]]),
+            high=np.array([[0.1, 0.1]]),
+            shape=(1, 2),
+            dtype=np.float32,
+        )
 
     def _define_observation_space(self):
         # TODO: The high value of 30 should not be hard coded
@@ -46,10 +50,9 @@ class F110_SB_Env(gymnasium.Env):
         return Dict(
             {
                 "scan": Box(low=0, high=30, shape=(self._num_beams,), dtype=np.float32),
-                # "linear_vel_x": Box(low=-10, high=10, shape=(), dtype=np.float32),
-                # "linear_vel_y": Box(low=-10, high=10, shape=(), dtype=np.float32),
-                # "angular_vel_z": Box(low=-10, high=10, shape=(), dtype=np.float32),
-                # "velocity": Box(low=-10, high=10, shape=(3,), dtype=np.float32),
+                "linear_vel_x": Box(low=-10, high=10, shape=(), dtype=np.float32),
+                "linear_vel_y": Box(low=-10, high=10, shape=(), dtype=np.float32),
+                "angular_vel_z": Box(low=-10, high=10, shape=(), dtype=np.float32),
             }
         )
 
@@ -98,13 +101,19 @@ class F110_SB_Env(gymnasium.Env):
     def _transform_obs_for_sb(self, obs):
         return {
             "scan": obs["scans"][0],
-            # "linear_vel_x": obs["linear_vels_x"][0],
-            # "linear_vel_y": obs["linear_vels_y"][0],
-            # "angular_vel_z": obs["ang_vels_z"][0],
-            # "velocity": np.array(
-            #     [obs["linear_vels_x"][0], obs["linear_vels_y"][0], obs["ang_vels_z"][0]]
-            # ),
+            "linear_vel_x": obs["linear_vels_x"][0],
+            "linear_vel_y": obs["linear_vels_y"][0],
+            "angular_vel_z": obs["ang_vels_z"][0],
         }
+
+    def enable_beam_rendering(self):
+        self._beam_rendering_enabled = True
+
+    def disable_beam_rendering(self):
+        self._beam_rendering_enabled = False
+
+        for beam_i in range(self._num_beams):
+            self._beam_gl_lines[beam_i].vertices = [0, 0, 0, 0]
 
     def reset(self, *, seed=None, options=None):
         obs, _, _, info = self.env.reset(np.array([self.reset_pose]))
@@ -112,9 +121,10 @@ class F110_SB_Env(gymnasium.Env):
         return self._transform_obs_for_sb(obs), info
 
     def step(self, action):
+        print("action", action)
         obs, step_reward, done, info = self.env.step(np.array(action))
 
-        if not self.disable_rendering:
+        if self._beam_rendering_enabled:
             self._update_beam_gl_lines(obs)
 
         # TODO: Pass truncated based on collison info

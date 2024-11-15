@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Tuple
+import typing
 
 
 class Agent(ABC):
 
     @abstractmethod
-    def take_action(self, obs: Dict) -> Tuple[float, float]: ...
+    def take_action(self, obs: typing.Dict) -> typing.List[typing.List[float]]: ...
