@@ -32,8 +32,8 @@ class PPOAgent(Agent):
 
         return model
 
-    def take_action(self, obs: typing.Dict) -> np.ndarray:
-        action, _state = self._model.predict(obs)
+    def take_action(self, obs: typing.Dict, deterministic: bool = False) -> np.ndarray:
+        action, _ = self._model.predict(obs, deterministic=deterministic)
         return action
 
     def learn(self):

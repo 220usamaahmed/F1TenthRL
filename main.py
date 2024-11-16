@@ -37,7 +37,11 @@ def build_env(config: Namespace, enable_action_recording=False) -> F110_SB_Env:
 
 
 def run_environment(
-    env: F110_SB_Env, agent: Agent, verbose=False, max_timesteps=np.inf
+    env: F110_SB_Env,
+    agent: Agent,
+    deterministic=True,
+    max_timesteps=np.inf,
+    verbose=False,
 ):
 
     obs, info = env.reset()
@@ -51,7 +55,7 @@ def run_environment(
             break
         t += 1
 
-        action = agent.take_action(obs)
+        action = agent.take_action(obs, deterministic=deterministic)
         obs, step_reward, done, truncated, info = env.step(action)
         env.render(mode="human")
 
