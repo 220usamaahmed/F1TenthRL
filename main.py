@@ -12,7 +12,7 @@ from src.f110_sb_env import F110_SB_Env
 
 
 NUM_AGENTS = 1
-LIDAR_NUM_BEAMS = 32
+LIDAR_NUM_BEAMS = 1080
 LIDAR_FOV = 4.7
 
 
@@ -58,9 +58,9 @@ def run_environment(
         if verbose:
             print(f"--- t = {t:03} {'-' * 16}")
             print("Action", action)
-            # print("Velocity X", obs["linear_vel_x"])
-            # print("Velocity Y", obs["linear_vel_y"])
-            # print("Angular Velocity Z", obs["angular_vel_z"])
+            print("Velocity X", obs["linear_vel_x"])
+            print("Velocity Y", obs["linear_vel_y"])
+            print("Angular Velocity Z", obs["angular_vel_z"])
             print("Reward", step_reward)
             print("Done", done)
 
@@ -87,8 +87,8 @@ def main():
     env = build_env(config, enable_action_recording=False)
 
     # Dummy agent
-    # dummy_agent = DummyAgent()
-    # run_environment(env, dummy_agent, verbose=True)
+    # dummy_agent = DummyAgent(steer=0, speed=1)
+    # run_environment(env, dummy_agent, max_timesteps=300, verbose=True)
 
     # PPO agent (having issues with inf)
     try:
@@ -98,16 +98,21 @@ def main():
         print("Learning failed.")
         if env.record_actions:
             save_recording(
-                f"ppo_agent_inf_issue-{datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}",
+                f"ppo_agent_inf_issue-{datetime.now().strftime('%y-%m-%d_%h:%m:%s')}",
                 env.get_recorded_actions(),
             )
         return
-    run_environment(env, ppo_agent, verbose=True, max_timesteps=500)
+    env.enable_recording()
     run_environment(env, ppo_agent, verbose=True)
+    save_recording(
+        f"ppo_agent_eval-{datetime.now().strftime('%y-%m-%d-%h-%m-%s')}",
+        env.get_recorded_actions(),
+    )
 
     # Playback agent (investigating PPO inf issue)
     # playback_agent = PlaybackAgent(
-    #     recording_path="./action_recordings/ppo_agent_inf_issue/episode_1.csv"
+    #     # recording_path="./action_recordings/ppo_agent_inf_issue/episode_1.csv"
+    #     recording_path="./action_recordings/ppo_agent_eval-24-11-16-Nov-11-1731715477/episode_1.csv"
     # )
     # run_environment(env, playback_agent, verbose=True, max_timesteps=1000)
 

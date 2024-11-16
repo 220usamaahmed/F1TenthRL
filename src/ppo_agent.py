@@ -23,7 +23,7 @@ class PPOAgent(Agent):
             policy_kwargs=policy_kwargs,
             verbose=1,
             learning_rate=0.0003,
-            n_steps=2048,
+            n_steps=512,
             batch_size=64,
             n_epochs=10,
             gamma=0.99,
@@ -37,4 +37,4 @@ class PPOAgent(Agent):
         return action
 
     def learn(self):
-        self._model.learn(total_timesteps=100000)
+        self._model.learn(total_timesteps=200000)

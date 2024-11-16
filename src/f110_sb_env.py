@@ -40,8 +40,8 @@ class F110_SB_Env(gymnasium.Env):
 
     def _define_action_space(self):
         return Box(
-            low=np.array([-1, -10]),
-            high=np.array([1, 10]),
+            low=np.array([-10, 0]),
+            high=np.array([10, 10]),
             dtype=np.float32,
         )
 
@@ -53,9 +53,9 @@ class F110_SB_Env(gymnasium.Env):
         return Dict(
             {
                 "scan": Box(low=0, high=30, shape=(self._num_beams,), dtype=np.float32),
-                # "linear_vel_x": Box(low=-10, high=10, shape=(), dtype=np.float32),
-                # "linear_vel_y": Box(low=-10, high=10, shape=(), dtype=np.float32),
-                # "angular_vel_z": Box(low=-10, high=10, shape=(), dtype=np.float32),
+                "linear_vel_x": Box(low=-10, high=10, shape=(), dtype=np.float32),
+                "linear_vel_y": Box(low=-10, high=10, shape=(), dtype=np.float32),
+                "angular_vel_z": Box(low=-10, high=10, shape=(), dtype=np.float32),
             }
         )
 
@@ -105,20 +105,21 @@ class F110_SB_Env(gymnasium.Env):
     def _transform_obs_for_sb(self, obs):
         return {
             "scan": obs["scans"][0],
-            # "linear_vel_x": obs["linear_vels_x"][0],
-            # "linear_vel_y": obs["linear_vels_y"][0],
-            # "angular_vel_z": obs["ang_vels_z"][0],
+            "linear_vel_x": obs["linear_vels_x"][0],
+            "linear_vel_y": obs["linear_vels_y"][0],
+            "angular_vel_z": obs["ang_vels_z"][0],
         }
 
     def _shape_reward(self, env_reward, obs):
         reward = env_reward
 
         if obs["collisions"][0] == 1.0:
-            reward = -1
+            reward = -10
         else:
             velocity = obs["linear_vels_x"][0]
-            angular_velocity = obs["ang_vels_z"][0]
-            reward += 0.1 * velocity - 0.1 * angular_velocity
+            reward = 0.1 * velocity
+            # angular_velocity = obs["ang_vels_z"][0]
+            # reward += 0.1 * velocity - 0.1 * angular_velocity
 
         return reward
 
@@ -131,8 +132,17 @@ class F110_SB_Env(gymnasium.Env):
         for beam_i in range(self._num_beams):
             self._beam_gl_lines[beam_i].vertices = [0, 0, 0, 0]
 
+    def enable_recording(self):
+        self.record_actions = True
+        self._recorded_actions = [[]]
+
+    def disable_recording(self):
+        self.record_actions = False
+        self._recorded_actions = [[]]
+
     def reset(self, *, seed=None, options=None):
         obs, _, _, info = self.env.reset(np.array([self.reset_pose]))
+        self._previous_action = None
 
         # TODO: Reset is called before training so there is an extra empty list
         if self.record_actions:
@@ -144,7 +154,7 @@ class F110_SB_Env(gymnasium.Env):
         if self._previous_action is None:
             self._previous_action = action
         else:
-            d = 0.95
+            d = 0.5
             action = self._previous_action * d + action * (1 - d)
 
         if self.record_actions:

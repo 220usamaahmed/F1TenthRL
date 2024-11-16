@@ -5,5 +5,9 @@ import numpy as np
 
 class DummyAgent(Agent):
 
+    def __init__(self, steer=1, speed=1):
+        self.steer = steer
+        self.speed = speed
+
     def take_action(self, obs: typing.Dict) -> np.ndarray:
-        return np.array([0.05, 1.0])
+        return np.array([self.steer, self.speed])
