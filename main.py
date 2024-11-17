@@ -85,6 +85,10 @@ def save_recording(name: str, recordings: typing.List[typing.List[np.ndarray]]):
     print(f"{len(recordings)}(s) recordings saved at: {directory_path}")
 
 
+def get_date_tag() -> str:
+    return datetime.now().strftime("%y-%m-%d_%H:%M:%S")
+
+
 def main():
     # TODO: Get agent and map from command line arguments
     config = load_map_config("circle")
@@ -94,31 +98,35 @@ def main():
     # dummy_agent = DummyAgent(steer=0, speed=1)
     # run_environment(env, dummy_agent, max_timesteps=300, verbose=True)
 
-    # PPO agent (having issues with inf)
-    try:
-        ppo_agent = PPOAgent(env)
-        ppo_agent.learn()
-    except:
-        print("Learning failed.")
-        if env.record_actions:
-            save_recording(
-                f"ppo_agent_inf_issue-{datetime.now().strftime('%y-%m-%d_%h:%m:%s')}",
-                env.get_recorded_actions(),
-            )
-        return
-    env.enable_recording()
-    run_environment(env, ppo_agent, verbose=True)
-    save_recording(
-        f"ppo_agent_eval-{datetime.now().strftime('%y-%m-%d-%h-%m-%s')}",
-        env.get_recorded_actions(),
-    )
+    # PPO agent
+    # try:
+    #     # ppo_agent = PPOAgent.create(env)
+    #     # ppo_agent.learn(total_timesteps=200000)
+    #     # ppo_agent.save_model(f"./models/ppo_agent_{get_date_tag()}")
+    #
+    #     ppo_agent = PPOAgent.create_from_saved_model(
+    #         "./models/ppo_agent_24-11-17_01:14:24"
+    #     )
+    # except:
+    #     print("Learning failed.")
+    #     if env.record_actions:
+    #         save_recording(
+    #             f"ppo_agent_inf_issue-{get_date_tag()}",
+    #             env.get_recorded_actions(),
+    #         )
+    #     return
+    # env.enable_recording()
+    # run_environment(env, ppo_agent, deterministic=True, verbose=True)
+    # save_recording(
+    #     f"ppo_agent_eval-{get_date_tag()}",
+    #     env.get_recorded_actions(),
+    # )
 
     # Playback agent (investigating PPO inf issue)
-    # playback_agent = PlaybackAgent(
-    #     # recording_path="./action_recordings/ppo_agent_inf_issue/episode_1.csv"
-    #     recording_path="./action_recordings/ppo_agent_eval-24-11-16-Nov-11-1731715477/episode_1.csv"
-    # )
-    # run_environment(env, playback_agent, verbose=True, max_timesteps=1000)
+    playback_agent = PlaybackAgent(
+        recording_path="./action_recordings/ppo_agent_eval-24-11-17_01:41:00/episode_1.csv"
+    )
+    run_environment(env, playback_agent, deterministic=True, verbose=True)
 
 
 if __name__ == "__main__":

@@ -151,14 +151,14 @@ class F110_SB_Env(gymnasium.Env):
         return self._transform_obs_for_sb(obs), info
 
     def step(self, action):
+        if self.record_actions:
+            self._recorded_actions[-1].append(action)
+
         if self._previous_action is None:
             self._previous_action = action
         else:
             d = 0.5
             action = self._previous_action * d + action * (1 - d)
-
-        if self.record_actions:
-            self._recorded_actions[-1].append(action)
 
         obs, step_reward, done, info = self.env.step(np.array([action]))
 

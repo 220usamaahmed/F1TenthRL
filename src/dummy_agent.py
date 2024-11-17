@@ -9,5 +9,5 @@ class DummyAgent(Agent):
         self.steer = steer
         self.speed = speed
 
-    def take_action(self, obs: typing.Dict, deterministic: bool = True) -> np.ndarray:
+    def take_action(self, obs: typing.Dict, deterministic=True) -> np.ndarray:
         return np.array([self.steer, self.speed])
