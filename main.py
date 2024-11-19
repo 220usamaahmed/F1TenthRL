@@ -4,6 +4,7 @@ from datetime import datetime
 from argparse import Namespace
 import os
 import numpy as np
+from stable_baselines3.common.env_checker import check_env
 from src.agent import Agent
 from src.dummy_agent import DummyAgent
 from src.ppo_agent import PPOAgent
@@ -93,6 +94,7 @@ def main():
     # TODO: Get agent and map from command line arguments
     config = load_map_config("circle")
     env = build_env(config, enable_action_recording=False)
+    # check_env(env, warn=False)
 
     # Dummy agent
     # dummy_agent = DummyAgent(steer=0, speed=1)
