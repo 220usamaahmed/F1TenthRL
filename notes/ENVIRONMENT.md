@@ -29,3 +29,16 @@
 - dynamic_models.py
 - rendering.py
 
+## Actions space
+These are part of the car parameters passed to F110Env
+
+- Velocity:
+    - v_min = -5.0
+    - v_max = 20.0
+    - a_max: 9.51
+
+- Steering
+    - s_min: -0.4189
+    - s_max: 0.4189
+    - sv_min: -3.2
+    - sv_max: 3.2
