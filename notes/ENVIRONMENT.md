@@ -44,6 +44,6 @@ These are part of the car parameters passed to F110Env
     - sv_max: 3.2
     
 ## Observation space
-- LIDAR (FOV: 4.7, NUM_BEAMS: 1080)
+- LIDAR (FOV: 4.7, NUM_BEAMS: 1080, MAX_DISTANCE: 30.0)
 - X, Y velocity (v_min, v_max ??)
 - Z angular velocity (sv_min, sv_max ??)
