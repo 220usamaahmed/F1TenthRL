@@ -12,28 +12,64 @@ class F110_SB_Env(gymnasium.Env):
     DEFAULT_NUM_BEAMS = 1080
     DEFAULT_FOV = 4.7
     DEFAULT_MAX_RANGE = 30.0
+    DEFAULT_SV_MIN = -3.2
+    DEFAULT_SV_MAX = 3.2
+    DEFAULT_S_MIN = -0.4189
+    DEFAULT_S_MAX = 0.4189
+    DEFAULT_V_MIN = -5
+    DEFAULT_V_MAX = 20
+    ACTION_DAMPING_FACTORS = np.array([0.5, 0.5])
 
     def __init__(
         self,
         map: str,
         map_ext: str,
-        lidar_params: typing.Dict,
         reset_pose: typing.Tuple[float, float, float],
+        params: typing.Dict = {},
+        lidar_params: typing.Dict = {},
         record_actions=False,
     ):
         self.map = map
         self.map_ext = map_ext
-        self.lidar_params = lidar_params
         self.reset_pose = reset_pose
         self.record_actions = record_actions
 
         self._beam_rendering_enabled = False
-        self._num_beams = lidar_params.get("num_beams", F110_SB_Env.DEFAULT_NUM_BEAMS)
-        self._fov = lidar_params.get("fov", F110_SB_Env.DEFAULT_FOV)
-        self._max_range = lidar_params.get("max_range", F110_SB_Env.DEFAULT_MAX_RANGE)
         self._beam_gl_lines = []
         self._recorded_actions = [[]]
         self._previous_action = None
+
+        self._num_beams = lidar_params.get("num_beams", F110_SB_Env.DEFAULT_NUM_BEAMS)
+        self._fov = lidar_params.get("fov", F110_SB_Env.DEFAULT_FOV)
+        self._max_range = lidar_params.get("max_range", F110_SB_Env.DEFAULT_MAX_RANGE)
+        self._lidar_params = {
+            "num_beams": self._num_beams,
+            "fov": self._fov,
+            "max_range": self._max_range,
+        }
+
+        self._sv_min = params.get("sv_min", F110_SB_Env.DEFAULT_SV_MIN)
+        self._sv_max = params.get("sv_max", F110_SB_Env.DEFAULT_SV_MAX)
+        self._s_min = params.get("s_min", F110_SB_Env.DEFAULT_S_MIN)
+        self._s_max = params.get("s_max", F110_SB_Env.DEFAULT_S_MAX)
+        self._v_min = params.get("v_min", F110_SB_Env.DEFAULT_V_MIN)
+        self._v_max = params.get("v_max", F110_SB_Env.DEFAULT_V_MAX)
+        self._params = {
+            "sv_min": self._sv_min,
+            "sv_max": self._sv_max,
+            "s_min": self._s_min,
+            "s_max": self._s_max,
+            "v_min": self._v_min,
+            "v_max": self._v_max,
+        }
+
+        assert self._s_min < 0 and self._s_max > 0
+        assert self._v_min < 0 and self._v_max > 0
+        self._s_normalization_factor = max(abs(self._s_min), self._s_max)
+        self._v_normalization_factor = max(abs(self._v_min), self._v_max)
+        self._action_scale_factors = np.array(
+            [self._s_normalization_factor, self._v_normalization_factor]
+        )
 
         self.action_space = self._define_action_space()
         self.observation_space = self._define_observation_space()
@@ -41,23 +77,40 @@ class F110_SB_Env(gymnasium.Env):
         self._initialize_f110_gym()
 
     def _define_action_space(self):
+        # action: (steer, speed)
+        s_min_normalized = self._s_min / self._s_normalization_factor
+        s_max_normalized = self._s_max / self._s_normalization_factor
+
+        v_min_normalized = self._v_min / self._v_normalization_factor
+        v_max_normalized = self._v_max / self._v_normalization_factor
+
         return Box(
-            low=np.array([-10, 0]),
-            high=np.array([10, 10]),
+            low=np.array([s_min_normalized, s_max_normalized]),
+            high=np.array([v_min_normalized, v_max_normalized]),
             dtype=np.float32,
         )
 
     def _define_observation_space(self):
-        # TODO: The high value of 30 should not be hard coded
-        # TODO: Get low and high values of linear and angular velocities should not be hard coded
+        # TODO: Is the v_min and v_max really refering to linear velocities in x, y components?
         # TODO: Should the pose x, y, theta also be included in observations?
 
         return Dict(
             {
-                "scan": Box(low=0, high=30, shape=(self._num_beams,), dtype=np.float32),
-                "linear_vel_x": Box(low=-10, high=10, shape=(), dtype=np.float32),
-                "linear_vel_y": Box(low=-10, high=10, shape=(), dtype=np.float32),
-                "angular_vel_z": Box(low=-10, high=10, shape=(), dtype=np.float32),
+                "scan": Box(
+                    low=0,
+                    high=self._max_range,
+                    shape=(self._num_beams,),
+                    dtype=np.float32,
+                ),
+                "linear_vel_x": Box(
+                    low=self._v_min, high=self._v_max, shape=(), dtype=np.float32
+                ),
+                "linear_vel_y": Box(
+                    low=self._v_min, high=self._v_max, shape=(), dtype=np.float32
+                ),
+                "angular_vel_z": Box(
+                    low=self._sv_min, high=self._sv_max, shape=(), dtype=np.float32
+                ),
             }
         )
 
@@ -67,7 +120,8 @@ class F110_SB_Env(gymnasium.Env):
             map=self.map,
             map_ext=self.map_ext,
             num_agents=1,
-            lidar_params=self.lidar_params,
+            lidar_params=self._lidar_params,
+            params=self._params,
             timestep=0.01,
             # integrator=Integrator.RK4,
             integrator=Integrator.Euler,
@@ -76,7 +130,7 @@ class F110_SB_Env(gymnasium.Env):
 
     def _render_callback(self, env_renderer):
         if not len(self._beam_gl_lines):
-            for _ in range(self.lidar_params.get("num_beams", 32)):
+            for _ in range(self._num_beams):
                 gl_line = env_renderer.batch.add(
                     2,
                     GL_LINES,
@@ -159,10 +213,14 @@ class F110_SB_Env(gymnasium.Env):
         if self._previous_action is None:
             self._previous_action = action
         else:
-            d = 0.5
-            action = self._previous_action * d + action * (1 - d)
+            action = (
+                self._previous_action * F110_SB_Env.ACTION_DAMPING_FACTORS
+                + action * (1 - F110_SB_Env.ACTION_DAMPING_FACTORS)
+            )
 
-        obs, step_reward, done, info = self.env.step(np.array([action]))
+        scalled_actions = self._action_scale_factors * action
+
+        obs, step_reward, done, info = self.env.step(scalled_actions.reshape(1, -1))
 
         if self._beam_rendering_enabled:
             self._update_beam_gl_lines(obs)

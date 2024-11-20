@@ -5,7 +5,7 @@ import numpy as np
 
 class DummyAgent(Agent):
 
-    def __init__(self, steer=1, speed=1):
+    def __init__(self, steer=1.0, speed=1.0):
         self.steer = steer
         self.speed = speed
 
