@@ -7,11 +7,13 @@
 - [x] Create custom feature extractor for PPO model
 - [x] Add action recording to env and create playback agent to debug runs
 - [x] Add save and load model feature for RL based models
+- [x] Pass LIDAR params to env
 - [ ] Fix camera movement in visualization
 - [ ] Use normalized action and observations space values and scale according to env params
 - [ ] Setup some way of passing reward functions to env in order to compare different ones
 - [ ] Add observation recording and playback overlay in visualization
 - [ ] Add visulization for action and observation values
+- [ ] Save hyperparamter and env details with model saves
 
 # Reading List
 - [ ] https://www.youtube.com/watch?v=aTDkYFZFWug
