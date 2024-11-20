@@ -15,6 +15,7 @@ from src.f110_sb_env import F110_SB_Env
 NUM_AGENTS = 1
 LIDAR_NUM_BEAMS = 1080
 LIDAR_FOV = 4.7
+MAX_RANGE = 30.0
 
 
 def load_map_config(map_name: str) -> Namespace:
@@ -31,7 +32,11 @@ def build_env(config: Namespace, enable_action_recording=False) -> F110_SB_Env:
     return F110_SB_Env(
         map=config.map_path,
         map_ext=config.map_ext,
-        lidar_params={"num_beams": LIDAR_NUM_BEAMS, "fov": LIDAR_FOV},
+        lidar_params={
+            "num_beams": LIDAR_NUM_BEAMS,
+            "fov": LIDAR_FOV,
+            "max_range": MAX_RANGE,
+        },
         reset_pose=(config.starting_x, config.starting_y, config.starting_theta),
         record_actions=enable_action_recording,
     )
@@ -97,8 +102,8 @@ def main():
     # check_env(env, warn=False)
 
     # Dummy agent
-    # dummy_agent = DummyAgent(steer=0, speed=1)
-    # run_environment(env, dummy_agent, max_timesteps=300, verbose=True)
+    dummy_agent = DummyAgent(steer=0, speed=-100)
+    run_environment(env, dummy_agent, max_timesteps=300, verbose=True)
 
     # PPO agent
     # try:
@@ -117,18 +122,18 @@ def main():
     #             env.get_recorded_actions(),
     #         )
     #     return
-    # env.enable_recording()
+    # # env.enable_recording()
     # run_environment(env, ppo_agent, deterministic=True, verbose=True)
-    # save_recording(
-    #     f"ppo_agent_eval-{get_date_tag()}",
-    #     env.get_recorded_actions(),
-    # )
+    # # save_recording(
+    # #     f"ppo_agent_eval-{get_date_tag()}",
+    # #     env.get_recorded_actions(),
+    # # )
 
-    # Playback agent (investigating PPO inf issue)
-    playback_agent = PlaybackAgent(
-        recording_path="./action_recordings/ppo_agent_eval-24-11-17_01:41:00/episode_1.csv"
-    )
-    run_environment(env, playback_agent, deterministic=True, verbose=True)
+    # Playback agent
+    # playback_agent = PlaybackAgent(
+    #     recording_path="./action_recordings/ppo_agent_eval-24-11-17_01:41:00/episode_1.csv"
+    # )
+    # run_environment(env, playback_agent, deterministic=True, verbose=True)
 
 
 if __name__ == "__main__":

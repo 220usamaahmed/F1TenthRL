@@ -11,6 +11,7 @@ class F110_SB_Env(gymnasium.Env):
 
     DEFAULT_NUM_BEAMS = 1080
     DEFAULT_FOV = 4.7
+    DEFAULT_MAX_RANGE = 30.0
 
     def __init__(
         self,
@@ -29,6 +30,7 @@ class F110_SB_Env(gymnasium.Env):
         self._beam_rendering_enabled = False
         self._num_beams = lidar_params.get("num_beams", F110_SB_Env.DEFAULT_NUM_BEAMS)
         self._fov = lidar_params.get("fov", F110_SB_Env.DEFAULT_FOV)
+        self._max_range = lidar_params.get("max_range", F110_SB_Env.DEFAULT_MAX_RANGE)
         self._beam_gl_lines = []
         self._recorded_actions = [[]]
         self._previous_action = None
