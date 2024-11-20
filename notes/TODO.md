@@ -9,7 +9,7 @@
 - [x] Add save and load model feature for RL based models
 - [x] Pass LIDAR params to env
 - [ ] Fix camera movement in visualization
-- [ ] Use normalized action and observations space values and scale according to env params
+- [x] Use normalized action and observations space values and scale according to env params
 - [ ] Setup some way of passing reward functions to env in order to compare different ones
 - [ ] Add observation recording and playback overlay in visualization
 - [ ] Add visulization for action and observation values

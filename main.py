@@ -105,35 +105,32 @@ def main():
     # dummy_agent = DummyAgent(steer=0.1, speed=0.1)
     # run_environment(env, dummy_agent, max_timesteps=300, verbose=True)
 
-    ppo_agent = PPOAgent.create(env)
-    ppo_agent.learn(total_timesteps=200000)
-    ppo_agent.save_model(f"./models/ppo_agent_{get_date_tag()}")
-
     # PPO agent
-    # try:
-    #     ppo_agent = PPOAgent.create(env)
-    #     ppo_agent.learn(total_timesteps=200000)
-    #     ppo_agent.save_model(f"./models/ppo_agent_{get_date_tag()}")
-    #
-    #     # ppo_agent = PPOAgent.create_from_saved_model(
-    #     #     "./models/ppo_agent_24-11-17_01:14:24"
-    #     # )
-    # except Exception as e:
-    #     print("Learning failed.")
-    #     print(e)
-    # finally:
-    #     if env.record_actions:
-    #         save_recording(
-    #             f"ppo_agent_inf_issue-{get_date_tag()}",
-    #             env.get_recorded_actions(),
-    #         )
-    #     return
-    # env.enable_recording()
-    run_environment(env, ppo_agent, deterministic=True, verbose=True)
-    # save_recording(
-    #     f"ppo_agent_eval-{get_date_tag()}",
-    #     env.get_recorded_actions(),
-    # )
+    try:
+        # ppo_agent = PPOAgent.create(env)
+        # ppo_agent.learn(total_timesteps=80000)
+        # ppo_agent.save_model(f"./models/ppo_agent_{get_date_tag()}")
+
+        ppo_agent = PPOAgent.create_from_saved_model(
+            "./models/ppo_agent_24-11-20_23:16:08"
+        )
+
+        # env.enable_recording()
+        run_environment(env, ppo_agent, deterministic=True, verbose=True)
+        # save_recording(
+        #     f"ppo_agent_eval-{get_date_tag()}",
+        #     env.get_recorded_actions(),
+        # )
+    except Exception as e:
+        print("Learning failed.")
+        print(e)
+    finally:
+        if env.record_actions:
+            save_recording(
+                f"ppo_agent_inf_issue-{get_date_tag()}",
+                env.get_recorded_actions(),
+            )
+        return
 
     # Playback agent
     # playback_agent = PlaybackAgent(

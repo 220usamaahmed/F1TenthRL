@@ -85,8 +85,8 @@ class F110_SB_Env(gymnasium.Env):
         v_max_normalized = self._v_max / self._v_normalization_factor
 
         return Box(
-            low=np.array([s_min_normalized, s_max_normalized]),
-            high=np.array([v_min_normalized, v_max_normalized]),
+            low=np.array([s_min_normalized, v_min_normalized]),
+            high=np.array([s_max_normalized, v_max_normalized]),
             dtype=np.float32,
         )
 
@@ -159,11 +159,16 @@ class F110_SB_Env(gymnasium.Env):
             gl_line.vertices = [car_x * 50, car_y * 50, end_x * 50, end_y * 50]
 
     def _transform_obs_for_sb(self, obs):
+        # TODO: Issue with inf in angular velocity
+        a = obs["ang_vels_z"][0]
+        a = min(a, self._sv_max)
+        a = max(a, self._sv_min)
+
         return {
             "scan": obs["scans"][0],
             "linear_vel_x": obs["linear_vels_x"][0],
             "linear_vel_y": obs["linear_vels_y"][0],
-            "angular_vel_z": obs["ang_vels_z"][0],
+            "angular_vel_z": a,
         }
 
     def _shape_reward(self, env_reward, obs):
@@ -173,7 +178,7 @@ class F110_SB_Env(gymnasium.Env):
             reward = -10
         else:
             velocity = obs["linear_vels_x"][0]
-            reward = 0.1 * velocity
+            reward = (1 / self._v_max) * velocity
             # angular_velocity = obs["ang_vels_z"][0]
             # reward += 0.1 * velocity - 0.1 * angular_velocity
 
