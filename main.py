@@ -13,12 +13,6 @@ from src.f110_sb_env import F110_SB_Env
 from src.runtime_visualization import RuntimeVisualizer
 
 
-NUM_AGENTS = 1
-LIDAR_NUM_BEAMS = 1080
-LIDAR_FOV = 4.7
-MAX_RANGE = 30.0
-
-
 def load_map_config(map_name: str) -> Namespace:
     with open("map_configs.yaml") as file:
         maps_config = yaml.load(file, Loader=yaml.FullLoader)
@@ -33,11 +27,6 @@ def build_env(config: Namespace, enable_action_recording=False) -> F110_SB_Env:
     return F110_SB_Env(
         map=config.map_path,
         map_ext=config.map_ext,
-        lidar_params={
-            "num_beams": LIDAR_NUM_BEAMS,
-            "fov": LIDAR_FOV,
-            "max_range": MAX_RANGE,
-        },
         reset_pose=(config.starting_x, config.starting_y, config.starting_theta),
         record_actions=enable_action_recording,
     )
@@ -118,11 +107,11 @@ def main():
         # ppo_agent.save_model(f"./models/ppo_agent_{get_date_tag()}")
 
         ppo_agent = PPOAgent.create_from_saved_model(
-            "./models/ppo_agent_24-11-20_23:16:08"
+            "./models/ppo_agent_24-11-21_16:49:12"
         )
 
         # env.enable_recording()
-        run_environment(env, ppo_agent, deterministic=True, verbose=True)
+        run_environment(env, ppo_agent, deterministic=True, verbose=False)
         # save_recording(
         #     f"ppo_agent_eval-{get_date_tag()}",
         #     env.get_recorded_actions(),
