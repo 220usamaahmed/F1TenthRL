@@ -10,6 +10,7 @@ from src.dummy_agent import DummyAgent
 from src.ppo_agent import PPOAgent
 from src.playback_agent import PlaybackAgent
 from src.f110_sb_env import F110_SB_Env
+from src.runtime_visualization import RuntimeVisualizer
 
 
 NUM_AGENTS = 1
@@ -49,6 +50,7 @@ def run_environment(
     max_timesteps=np.inf,
     verbose=False,
 ):
+    rv = RuntimeVisualizer()
 
     obs, info = env.reset()
     env.enable_beam_rendering()
@@ -63,6 +65,8 @@ def run_environment(
 
         action = agent.take_action(obs, deterministic=deterministic)
         obs, step_reward, done, truncated, info = env.step(action)
+
+        rv.add_data(action, obs)
         env.render(mode="human")
 
         if verbose:
@@ -76,6 +80,8 @@ def run_environment(
 
         if done:
             break
+
+    rv.exit()
 
 
 def save_recording(name: str, recordings: typing.List[typing.List[np.ndarray]]):
@@ -103,7 +109,7 @@ def main():
 
     # Dummy agent
     # dummy_agent = DummyAgent(steer=0.1, speed=0.1)
-    # run_environment(env, dummy_agent, max_timesteps=300, verbose=True)
+    # run_environment(env, dummy_agent, max_timesteps=300, verbose=False)
 
     # PPO agent
     try:
