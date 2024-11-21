@@ -23,10 +23,32 @@ class RuntimeVisualizer:
 
         win = pg.GraphicsLayoutWidget(show=True, title="F1Tenth Env Vis")
         win.resize(800, 600)
+
         obs_plot = win.addPlot(title="Observations")
+        obs_legend = pg.LegendItem(offset=(70, 10))
+        obs_legend.setParentItem(obs_plot.graphicsItem())
+        obs_legend.setBrush(pg.mkBrush(100, 100, 100, 150))
+
         x_lin_vel_curve = obs_plot.plot(pen="r")
         y_lin_vel_curve = obs_plot.plot(pen="g")
         z_ang_vel_curve = obs_plot.plot(pen="y")
+
+        obs_legend.addItem(x_lin_vel_curve, "X Linear Velocity")
+        obs_legend.addItem(y_lin_vel_curve, "Y Linear Velocity")
+        obs_legend.addItem(z_ang_vel_curve, "Z Angular Velocity")
+
+        win.nextRow()
+
+        action_plot = win.addPlot(title="Actions")
+        action_legend = pg.LegendItem(offset=(70, 10))
+        action_legend.setParentItem(action_plot.graphicsItem())
+        action_legend.setBrush(pg.mkBrush(100, 100, 100, 150))
+
+        steer_curve = action_plot.plot(pen="m")
+        speed_curve = action_plot.plot(pen="c")
+
+        action_legend.addItem(steer_curve, "Steer")
+        action_legend.addItem(speed_curve, "Speed")
 
         x_lin_vel_data = deque(maxlen=RuntimeVisualizer.WINDOW_SIZE)
         y_lin_vel_data = deque(maxlen=RuntimeVisualizer.WINDOW_SIZE)
@@ -51,6 +73,9 @@ class RuntimeVisualizer:
             x_lin_vel_curve.setData(x, x_lin_vel_data)
             y_lin_vel_curve.setData(x, y_lin_vel_data)
             z_ang_vel_curve.setData(x, z_ang_vel_data)
+
+            steer_curve.setData(x, steer_data)
+            speed_curve.setData(x, speed_data)
 
         timer = QtCore.QTimer()
         timer.timeout.connect(update)
