@@ -14,6 +14,10 @@
 - [ ] Add observation recording and playback overlay in visualization
 - [ ] Add visulization for action and observation values
 - [ ] Save hyperparamter and env details with model saves
+- [ ] Add additional agents as obsticles 
+- [ ] Add additional running agents
+- [ ] Explore optuna for hyper paramter tuning
+- [ ] Control frame rate during visualization
 
 # Reading List
 - [ ] https://www.youtube.com/watch?v=aTDkYFZFWug
