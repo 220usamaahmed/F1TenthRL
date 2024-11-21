@@ -5,7 +5,7 @@ from argparse import Namespace
 import os
 import numpy as np
 from stable_baselines3.common.env_checker import check_env
-from src.agent import Agent
+from src.agent import Agent, SBAgentLearningException
 from src.dummy_agent import DummyAgent
 from src.ppo_agent import PPOAgent
 from src.playback_agent import PlaybackAgent
@@ -38,6 +38,7 @@ def run_environment(
     deterministic=True,
     max_timesteps=np.inf,
     verbose=False,
+    render_mode="human_slow",
 ):
     rv = RuntimeVisualizer()
 
@@ -56,7 +57,7 @@ def run_environment(
         obs, step_reward, done, truncated, info = env.step(action)
 
         rv.add_data(action, obs)
-        env.render(mode="human")
+        env.render(mode=render_mode)
 
         if verbose:
             print(f"--- t = {t:03} {'-' * 16}")
@@ -116,7 +117,7 @@ def main():
         #     f"ppo_agent_eval-{get_date_tag()}",
         #     env.get_recorded_actions(),
         # )
-    except Exception as e:
+    except SBAgentLearningException as e:
         print("Learning failed.")
         print(e)
     finally:

@@ -28,3 +28,10 @@ class SBAgent(Agent):
 
     @abstractmethod
     def save_model(self, model_path: str): ...
+
+
+class SBAgentLearningException(Exception):
+
+    def __init__(self, original_exception):
+        self.original_exception = original_exception
+        super().__init__(f"An error occurred: {str(original_exception)}")

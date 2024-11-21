@@ -1,5 +1,5 @@
 import typing
-from src.agent import SBAgent
+from src.agent import SBAgent, SBAgentLearningException
 from src.f110_sb_env import F110_SB_Env
 from src.feature_extractor import CustomCombinedExtractor
 import numpy as np
@@ -44,7 +44,10 @@ class PPOAgent(SBAgent):
         return action
 
     def learn(self, total_timesteps=1000):
-        self._model.learn(total_timesteps=total_timesteps)
+        try:
+            self._model.learn(total_timesteps=total_timesteps)
+        except Exception as e:
+            raise SBAgentLearningException(e)
 
     def save_model(self, model_path: str):
         self._model.save(f"{model_path}.zip")
