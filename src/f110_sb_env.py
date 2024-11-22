@@ -129,6 +129,7 @@ class F110_SB_Env(gymnasium.Env):
         self.env.add_render_callback(self._render_callback)
 
     def _render_callback(self, env_renderer):
+        # Adding LIDAR beam lines on first run
         if not len(self._beam_gl_lines):
             for _ in range(self._num_beams):
                 gl_line = env_renderer.batch.add(
@@ -139,6 +140,12 @@ class F110_SB_Env(gymnasium.Env):
                     ("c3B/stream", (255, 0, 0, 255, 0, 0)),
                 )
                 self._beam_gl_lines.append(gl_line)
+
+        # Updating camera position
+        car_vertices = env_renderer.cars[0].vertices
+        x = np.mean(car_vertices[::2])
+        y = np.mean(car_vertices[1::2])
+        env_renderer.set_center(x, y)
 
     def _update_beam_gl_lines(self, obs):
         car_x = obs["poses_x"][0]

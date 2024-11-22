@@ -8,8 +8,9 @@
 - [x] Add action recording to env and create playback agent to debug runs
 - [x] Add save and load model feature for RL based models
 - [x] Pass LIDAR params to env
-- [ ] Fix camera movement in visualization
+- [x] Control frame rate during visualization
 - [x] Use normalized action and observations space values and scale according to env params
+- [x] Fix camera movement in visualization
 - [ ] Setup some way of passing reward functions to env in order to compare different ones
 - [ ] Add observation recording and playback overlay in visualization
 - [ ] Add visulization for action and observation values
@@ -17,7 +18,6 @@
 - [ ] Add additional agents as obsticles 
 - [ ] Add additional running agents
 - [ ] Explore optuna for hyper paramter tuning
-- [ ] Control frame rate during visualization
 
 # Reading List
 - [ ] https://www.youtube.com/watch?v=aTDkYFZFWug

@@ -40,7 +40,7 @@ def run_environment(
     verbose=False,
     render_mode="human_slow",
 ):
-    rv = RuntimeVisualizer()
+    # rv = RuntimeVisualizer()
 
     obs, info = env.reset()
     env.enable_beam_rendering()
@@ -56,7 +56,7 @@ def run_environment(
         action = agent.take_action(obs, deterministic=deterministic)
         obs, step_reward, done, truncated, info = env.step(action)
 
-        rv.add_data(action, obs)
+        # rv.add_data(action, obs)
         env.render(mode=render_mode)
 
         if verbose:
@@ -71,7 +71,7 @@ def run_environment(
         if done:
             break
 
-    rv.exit()
+    # rv.exit()
 
 
 def save_recording(name: str, recordings: typing.List[typing.List[np.ndarray]]):
@@ -93,7 +93,7 @@ def get_date_tag() -> str:
 
 def main():
     # TODO: Get agent and map from command line arguments
-    config = load_map_config("circle")
+    config = load_map_config("example")
     env = build_env(config, enable_action_recording=False)
     # check_env(env, warn=False)
 
@@ -103,13 +103,13 @@ def main():
 
     # PPO agent
     try:
-        # ppo_agent = PPOAgent.create(env)
-        # ppo_agent.learn(total_timesteps=80000)
-        # ppo_agent.save_model(f"./models/ppo_agent_{get_date_tag()}")
+        ppo_agent = PPOAgent.create(env)
+        ppo_agent.learn(total_timesteps=80000)
+        ppo_agent.save_model(f"./models/ppo_agent_{get_date_tag()}")
 
-        ppo_agent = PPOAgent.create_from_saved_model(
-            "./models/ppo_agent_24-11-21_16:49:12"
-        )
+        # ppo_agent = PPOAgent.create_from_saved_model(
+        #     "./models/ppo_agent_24-11-21_16:49:12"
+        # )
 
         # env.enable_recording()
         run_environment(env, ppo_agent, deterministic=True, verbose=False)
