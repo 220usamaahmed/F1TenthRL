@@ -46,32 +46,31 @@ def run_environment(
     env.enable_beam_rendering()
     env.render()
 
-    t = 0
+    with RuntimeVisualizer() as rv:
+        t = 0
+        while True:
+            if t > max_timesteps:
+                break
+            t += 1
 
-    while True:
-        if t > max_timesteps:
-            break
-        t += 1
+            action = agent.take_action(obs, deterministic=deterministic)
+            obs, step_reward, done, truncated, info = env.step(action)
 
-        action = agent.take_action(obs, deterministic=deterministic)
-        obs, step_reward, done, truncated, info = env.step(action)
+            rv.add_data(action, obs)
+            env.render(mode=render_mode)
 
-        rv.add_data(action, obs)
-        env.render(mode=render_mode)
+            if verbose:
+                print(f"--- t = {t:03} {'-' * 16}")
+                print("Action", action)
+                print("Velocity X", obs["linear_vel_x"])
+                print("Velocity Y", obs["linear_vel_y"])
+                print("Angular Velocity Z", obs["angular_vel_z"])
+                print("Reward", step_reward)
+                print("Info", info)
+                print("Done", done)
 
-        if verbose:
-            print(f"--- t = {t:03} {'-' * 16}")
-            print("Action", action)
-            print("Velocity X", obs["linear_vel_x"])
-            print("Velocity Y", obs["linear_vel_y"])
-            print("Angular Velocity Z", obs["angular_vel_z"])
-            print("Reward", step_reward)
-            print("Done", done)
-
-        if done:
-            break
-
-    rv.exit()
+            if done:
+                break
 
 
 def save_recording(name: str, recordings: typing.List[typing.List[np.ndarray]]):

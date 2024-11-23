@@ -15,7 +15,16 @@ class RuntimeVisualizer:
             target=RuntimeVisualizer._run_pyqt, args=(self._data_queue,)
         )
 
-        self._pyqt_process.start()
+    def __enter__(self):
+        self.start()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.exit()
+        if exc_type:
+            print(f"Exception occurred: {exc_value}")
+            print(traceback)
+        return False
 
     @staticmethod
     def _run_pyqt(queue):
@@ -84,8 +93,12 @@ class RuntimeVisualizer:
 
         app.exec_()
 
+    def start(self):
+        self._pyqt_process.start()
+
     def add_data(self, action, observation):
-        self._data_queue.put((action, observation))
+        if self._pyqt_process.is_alive():
+            self._data_queue.put((action, observation))
 
     def exit(self):
         self._pyqt_process.terminate()
