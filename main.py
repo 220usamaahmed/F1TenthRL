@@ -40,8 +40,6 @@ def run_environment(
     verbose=False,
     render_mode="human_slow",
 ):
-    rv = RuntimeVisualizer()
-
     obs, info = env.reset()
     env.enable_beam_rendering()
     env.render()

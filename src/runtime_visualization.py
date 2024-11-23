@@ -14,9 +14,9 @@ class RuntimeVisualizer:
         self._pyqt_process = Process(
             target=RuntimeVisualizer._run_pyqt, args=(self._data_queue,)
         )
+        self.start()
 
     def __enter__(self):
-        self.start()
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
