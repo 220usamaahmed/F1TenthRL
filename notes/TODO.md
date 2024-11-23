@@ -11,9 +11,9 @@
 - [x] Control frame rate during visualization
 - [x] Use normalized action and observations space values and scale according to env params
 - [x] Fix camera movement in visualization
+- [x] Add visulization for action and observation values
 - [ ] Setup some way of passing reward functions to env in order to compare different ones
 - [ ] Add observation recording and playback overlay in visualization
-- [ ] Add visulization for action and observation values
 - [ ] Save hyperparamter and env details with model saves
 - [ ] Add additional agents as obsticles 
 - [ ] Add additional running agents

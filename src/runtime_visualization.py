@@ -22,7 +22,8 @@ class RuntimeVisualizer:
         app = QtWidgets.QApplication([])
 
         win = pg.GraphicsLayoutWidget(show=True, title="F1Tenth Env Vis")
-        win.resize(800, 600)
+        win.resize(640, 480)
+        win.move(640, 0)
 
         obs_plot = win.addPlot(title="Observations")
         obs_legend = pg.LegendItem(offset=(70, 10))
