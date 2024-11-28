@@ -165,27 +165,37 @@ class F110_SB_Env(gymnasium.Env):
             # TODO: Find out why this is working with 50
             gl_line.vertices = [car_x * 50, car_y * 50, end_x * 50, end_y * 50]
 
-    def _transform_obs_for_sb(self, obs):
+    def _transform_obs_and_info_for_sb(self, obs, info) -> typing.Tuple[dict, dict]:
         # TODO: Issue with inf in angular velocity
         a = obs["ang_vels_z"][0]
         a = min(a, self._sv_max)
         a = max(a, self._sv_min)
 
-        return {
+        transformed_obs = {
             "scan": obs["scans"][0],
             "linear_vel_x": obs["linear_vels_x"][0],
             "linear_vel_y": obs["linear_vels_y"][0],
             "angular_vel_z": a,
         }
 
-    def _shape_reward(self, env_reward, obs):
+        transformed_info = {
+            "lap_time": obs["lap_times"][0],
+            "lap_count": obs["lap_counts"][0],
+            "checkpoint_done": info["checkpoint_done"][0],
+        }
+
+        return transformed_obs, transformed_info
+
+    def _shape_reward(self, env_reward, obs) -> float:
         reward = env_reward
 
         if obs["collisions"][0] == 1.0:
-            reward = -10
+            reward = -1
         else:
             velocity = obs["linear_vels_x"][0]
-            reward = (1 / self._v_max) * velocity
+            reward = 0.1 if velocity > 0 else -0.5
+
+            # reward = (1 / self._v_max) * velocity
             # angular_velocity = obs["ang_vels_z"][0]
             # reward += 0.1 * velocity - 0.1 * angular_velocity
 
@@ -216,7 +226,7 @@ class F110_SB_Env(gymnasium.Env):
         if self.record_actions:
             self._recorded_actions.append([])
 
-        return self._transform_obs_for_sb(obs), info
+        return self._transform_obs_and_info_for_sb(obs, info)
 
     def step(self, action):
         if self.record_actions:
@@ -237,9 +247,22 @@ class F110_SB_Env(gymnasium.Env):
         if self._beam_rendering_enabled:
             self._update_beam_gl_lines(obs)
 
-        transformed_obs = self._transform_obs_for_sb(obs)
+        transformed_obs, transformed_info = self._transform_obs_and_info_for_sb(
+            obs, info
+        )
         shaped_reward = self._shape_reward(step_reward, obs)
-        return transformed_obs, shaped_reward, done, done, info
+        terminated = done or obs["collisions"][0] == 1.0
+
+        # TODO: Check if max timesteps have been reached
+        truncated = False
+
+        return (
+            transformed_obs,
+            shaped_reward,
+            terminated,
+            truncated,
+            transformed_info,
+        )
 
     def render(self, mode: typing.Optional[str] = None):
         if mode is None:

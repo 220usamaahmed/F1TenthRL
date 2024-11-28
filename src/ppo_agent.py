@@ -51,3 +51,4 @@ class PPOAgent(SBAgent):
 
     def save_model(self, model_path: str):
         self._model.save(f"{model_path}.zip")
+        print(f"Model saved at: {model_path}")

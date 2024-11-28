@@ -29,6 +29,32 @@
 - dynamic_models.py
 - rendering.py
 
+## Info dict on step/reset
+```python
+{
+    # One per each car
+    # This only truns True when all laps are completed
+    'checkpoint_done': array([False])
+}
+```
+
+## Observation dict on step/reset
+```python
+{
+    'ego_idx': 0,
+    'scans': [array([1.36835889, 1.38568804, 1.35788828, ..., 1.1319741 , 1.12469559, 1.15298288])], 
+    'poses_x': [5.75], 
+    'poses_y': [0.0], 
+    'poses_theta': [1.57], 
+    'linear_vels_x': [0.0], 
+    'linear_vels_y': [0.0], 
+    'ang_vels_z': [0.0], 
+    'collisions': array([0.]), 
+    'lap_times': array([0.01]), 
+    'lap_counts': array([0.])
+}
+```
+
 ## Actions space
 These are part of the car parameters passed to F110Env
 

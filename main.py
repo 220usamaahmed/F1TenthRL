@@ -52,7 +52,7 @@ def run_environment(
             t += 1
 
             action = agent.take_action(obs, deterministic=deterministic)
-            obs, step_reward, done, truncated, info = env.step(action)
+            obs, step_reward, terminated, truncated, info = env.step(action)
 
             rv.add_data(action, obs)
             env.render(mode=render_mode)
@@ -64,10 +64,8 @@ def run_environment(
                 print("Velocity Y", obs["linear_vel_y"])
                 print("Angular Velocity Z", obs["angular_vel_z"])
                 print("Reward", step_reward)
-                print("Info", info)
-                print("Done", done)
 
-            if done:
+            if terminated or truncated:
                 break
 
 
@@ -90,8 +88,8 @@ def get_date_tag() -> str:
 
 def main():
     # TODO: Get agent and map from command line arguments
-    config = load_map_config("circle")
-    env = build_env(config, enable_action_recording=False)
+    config = load_map_config("example")
+    env = build_env(config, enable_action_recording=True)
     # check_env(env, warn=False)
 
     # Dummy agent
@@ -100,14 +98,14 @@ def main():
 
     # PPO agent
     try:
-        # ppo_agent = PPOAgent.create(env)
-        # ppo_agent.learn(total_timesteps=200000)
-        # ppo_agent.save_model(f"./models/ppo_agent_{get_date_tag()}")
+        ppo_agent = PPOAgent.create(env)
+        ppo_agent.learn(total_timesteps=20000)
+        ppo_agent.save_model(f"./models/ppo_agent_{get_date_tag()}")
 
-        ppo_agent = PPOAgent.create_from_saved_model(
-            # "./models/ppo_agent_24-11-21_16:49:12"  # Trained on example
-            "./models/ppo_agent_24-11-22_01:06:42"  # Trained on circle
-        )
+        # ppo_agent = PPOAgent.create_from_saved_model(
+        #     # "./models/ppo_agent_24-11-21_16:49:12"  # Trained on example
+        #     "./models/ppo_agent_24-11-22_01:06:42"  # Trained on circle
+        # )
 
         # env.enable_recording()
         run_environment(env, ppo_agent, deterministic=True, verbose=False)
