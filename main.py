@@ -23,12 +23,12 @@ def load_map_config(map_name: str) -> Namespace:
     return Namespace(**map_config)
 
 
-def build_env(config: Namespace, enable_action_recording=False) -> F110_SB_Env:
+def build_env(config: Namespace, enable_recording=False) -> F110_SB_Env:
     return F110_SB_Env(
         map=config.map_path,
         map_ext=config.map_ext,
         reset_pose=(config.starting_x, config.starting_y, config.starting_theta),
-        record_actions=enable_action_recording,
+        record=enable_recording,
     )
 
 
@@ -69,17 +69,28 @@ def run_environment(
                 break
 
 
-def save_recording(name: str, recordings: typing.List[typing.List[np.ndarray]]):
-    directory_path = os.path.join("action_recordings", name)
+def save_recording(name: str, actions, rewards, observations, infos):
+    directory_path = os.path.join("recordings", name)
 
     os.makedirs(directory_path, exist_ok=True)
 
-    for i, recording in enumerate(recordings):
-        with open(os.path.join(directory_path, f"episode_{i}.csv"), "w") as file:
-            for action in recording:
-                file.write(",".join(list(map(str, action))) + "\n")
+    with open(os.path.join(directory_path, f"actions.csv"), "w") as file:
+        for action in actions:
+            file.write(",".join(list(map(str, action))) + "\n")
 
-    print(f"{len(recordings)}(s) recordings saved at: {directory_path}")
+    with open(os.path.join(directory_path, f"rewards.csv"), "w") as file:
+        for reward in rewards:
+            file.write(str(reward) + "\n")
+
+    with open(os.path.join(directory_path, f"observations.csv"), "w") as file:
+        for observation in observations:
+            file.write(str(observation) + "\n")
+
+    with open(os.path.join(directory_path, f"info.csv"), "w") as file:
+        for info in infos:
+            file.write(str(info) + "\n")
+
+    print(f"Recording saved at: {directory_path}")
 
 
 def get_date_tag() -> str:
@@ -89,7 +100,7 @@ def get_date_tag() -> str:
 def main():
     # TODO: Get agent and map from command line arguments
     config = load_map_config("example")
-    env = build_env(config, enable_action_recording=True)
+    env = build_env(config, enable_recording=True)
     # check_env(env, warn=False)
 
     # Dummy agent
@@ -99,7 +110,7 @@ def main():
     # PPO agent
     try:
         ppo_agent = PPOAgent.create(env)
-        ppo_agent.learn(total_timesteps=20000)
+        ppo_agent.learn(total_timesteps=1000)
         ppo_agent.save_model(f"./models/ppo_agent_{get_date_tag()}")
 
         # ppo_agent = PPOAgent.create_from_saved_model(
@@ -117,16 +128,16 @@ def main():
         print("Learning failed.")
         print(e)
     finally:
-        if env.record_actions:
+        if env.record:
             save_recording(
                 f"ppo_agent_inf_issue-{get_date_tag()}",
-                env.get_recorded_actions(),
+                *env.get_recording(),
             )
         return
 
     # Playback agent
     # playback_agent = PlaybackAgent(
-    #     recording_path="./action_recordings/ppo_agent_eval-24-11-17_01:41:00/episode_1.csv"
+    #     recording_path="./action_recordings/ppo_agent_inf_issue-24-11-29_13:03:01/episode_1.csv"
     # )
     # run_environment(env, playback_agent, deterministic=True, verbose=True)
 

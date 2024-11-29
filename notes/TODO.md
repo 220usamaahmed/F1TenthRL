@@ -18,6 +18,7 @@
 - [ ] Add additional agents as obsticles 
 - [ ] Add additional running agents
 - [ ] Explore optuna for hyper paramter tuning
+- [ ] Save rewards, observations and info in recording. There is probably an issue with NaN in there
 
 # Reading List
 - [ ] https://www.youtube.com/watch?v=aTDkYFZFWug
@@ -25,3 +26,4 @@
 - [ ] State representation learning, Decoupling Feature Extration from Policy Learning, Augmented Autoencoders
 - [ ] gSDE (Generalized State-Dependent Exploration)
 - [ ] Reward normalization?
+- [ ] https://medium.com/aureliantactics/ppo-hyperparameters-and-ranges-6fc2d29bccbe

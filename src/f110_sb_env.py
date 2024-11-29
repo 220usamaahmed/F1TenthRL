@@ -27,16 +27,19 @@ class F110_SB_Env(gymnasium.Env):
         reset_pose: typing.Tuple[float, float, float],
         params: typing.Dict = {},
         lidar_params: typing.Dict = {},
-        record_actions=False,
+        record=False,
     ):
         self.map = map
         self.map_ext = map_ext
         self.reset_pose = reset_pose
-        self.record_actions = record_actions
+        self.record = record
 
         self._beam_rendering_enabled = False
         self._beam_gl_lines = []
-        self._recorded_actions = [[]]
+        self._recorded_actions = []
+        self._recorded_rewards = []
+        self._recorded_observations = []
+        self._recorded_info = []
         self._previous_action = None
 
         self._num_beams = lidar_params.get("num_beams", F110_SB_Env.DEFAULT_NUM_BEAMS)
@@ -178,6 +181,10 @@ class F110_SB_Env(gymnasium.Env):
             "angular_vel_z": a,
         }
 
+        # assert not np.isnan(transformed_obs["scan"]).any(), "NaN in scans"
+        # assert not np.isnan(transformed_obs["linear_vel_x"]), "NaN in lin vel x"
+        # assert not np.isnan(transformed_obs["linear_vel_y"]), "NaN in lin vel y"
+
         transformed_info = {
             "lap_time": obs["lap_times"][0],
             "lap_count": obs["lap_counts"][0],
@@ -201,6 +208,12 @@ class F110_SB_Env(gymnasium.Env):
 
         return reward
 
+    def _reset_recording(self):
+        self._recorded_actions = []
+        self._recorded_rewards = []
+        self._recorded_observations = []
+        self._recorded_info = []
+
     def enable_beam_rendering(self):
         self._beam_rendering_enabled = True
 
@@ -211,41 +224,43 @@ class F110_SB_Env(gymnasium.Env):
             self._beam_gl_lines[beam_i].vertices = [0, 0, 0, 0]
 
     def enable_recording(self):
-        self.record_actions = True
-        self._recorded_actions = [[]]
+        self.record = True
+        self._reset_recording()
 
     def disable_recording(self):
-        self.record_actions = False
-        self._recorded_actions = [[]]
+        self.record = False
+        self._reset_recording()
 
     def reset(self, *, seed=None, options=None):
-        obs, _, _, info = self.env.reset(np.array([self.reset_pose]))
+        obs, reward, _, info = self.env.reset(np.array([self.reset_pose]))
         self._previous_action = None
 
-        # TODO: Reset is called before training so there is an extra empty list
-        if self.record_actions:
-            self._recorded_actions.append([])
+        transformed_obs, transformed_info = self._transform_obs_and_info_for_sb(
+            obs, info
+        )
+        shaped_reward = self._shape_reward(reward, obs)
 
-        return self._transform_obs_and_info_for_sb(obs, info)
+        if self.record:
+            self._reset_recording()
+            self._recorded_rewards.append(shaped_reward)
+            self._recorded_observations.append(transformed_obs)
+            self._recorded_info.append(transformed_info)
+
+        return transformed_obs, transformed_info
 
     def step(self, action):
-        if self.record_actions:
-            self._recorded_actions[-1].append(action)
-
         if self._previous_action is None:
-            self._previous_action = action
+            damped_action = action
         else:
-            action = (
+            damped_action = (
                 self._previous_action * F110_SB_Env.ACTION_DAMPING_FACTORS
                 + action * (1 - F110_SB_Env.ACTION_DAMPING_FACTORS)
             )
+        self._previous_action = damped_action
 
-        scalled_actions = self._action_scale_factors * action
+        scalled_actions = self._action_scale_factors * damped_action
 
         obs, step_reward, done, info = self.env.step(scalled_actions.reshape(1, -1))
-
-        if self._beam_rendering_enabled:
-            self._update_beam_gl_lines(obs)
 
         transformed_obs, transformed_info = self._transform_obs_and_info_for_sb(
             obs, info
@@ -255,6 +270,15 @@ class F110_SB_Env(gymnasium.Env):
 
         # TODO: Check if max timesteps have been reached
         truncated = False
+
+        if self.record:
+            self._recorded_actions.append(action)
+            self._recorded_rewards.append(step_reward)
+            self._recorded_observations.append(transformed_obs)
+            self._recorded_info.append(transformed_info)
+
+        if self._beam_rendering_enabled:
+            self._update_beam_gl_lines(obs)
 
         return (
             transformed_obs,
@@ -270,7 +294,12 @@ class F110_SB_Env(gymnasium.Env):
         else:
             self.env.render(mode)
 
-    def get_recorded_actions(self):
-        assert self.record_actions, "Env not configured to record actions"
+    def get_recording(self):
+        assert self.record, "Env not configured to record actions"
 
-        return self._recorded_actions
+        return (
+            self._recorded_actions,
+            self._recorded_rewards,
+            self._recorded_observations,
+            self._recorded_info,
+        )
