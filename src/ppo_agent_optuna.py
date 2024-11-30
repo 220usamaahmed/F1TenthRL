@@ -59,8 +59,8 @@ def _objective(trial: Trial):
         tensorboard_logs=None,
     )
 
-    agent.learn(total_timesteps=100000)
-    total_reward = evaluate(env, agent)
+    agent.learn(total_timesteps=10000)
+    total_mean_reward = evaluate(env, agent)
 
     file_path = f"./models/ppo_agent_{get_date_tag()}"
 
@@ -68,7 +68,7 @@ def _objective(trial: Trial):
     trials.append(
         {
             "file_path": file_path,
-            "total_reward": total_reward,
+            "total_mean_reward": total_mean_reward,
             "learning_rate": learning_rate,
             "n_steps": n_steps,
             "batch_size": batch_size,
@@ -78,7 +78,7 @@ def _objective(trial: Trial):
         }
     )
 
-    return total_reward
+    return total_mean_reward
 
 
 def run_ppo_agent_study():
