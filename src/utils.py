@@ -1,3 +1,4 @@
+from math import trunc
 import yaml
 from datetime import datetime
 from argparse import Namespace
@@ -62,6 +63,25 @@ def run_environment(
 
             if terminated or truncated:
                 break
+
+
+def evaluate(env: F110_SB_Env, agent: Agent, n_eval_episodes=10):
+    reward_sums = []
+
+    for _ in range(n_eval_episodes):
+        obs, _ = env.reset()
+        reward_sum = 0
+        while True:
+            action = agent.take_action(obs, deterministic=False)
+            obs, step_reward, terminated, truncated, _ = env.step(action)
+            reward_sum += step_reward
+
+            if terminated or truncated:
+                break
+
+        reward_sums.append(reward_sum)
+
+    return np.mean(reward_sums)
 
 
 def save_recording(name: str, actions, rewards, observations, infos):

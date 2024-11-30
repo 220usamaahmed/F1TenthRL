@@ -1,9 +1,12 @@
 import typing
+
+from optuna.trial import Trial
 from src.agent import SBAgent, SBAgentLearningException
 from src.f110_sb_env import F110_SB_Env
 from src.feature_extractor import CustomCombinedExtractor
 import numpy as np
 from stable_baselines3 import PPO
+import optuna
 
 
 class PPOAgent(SBAgent):
@@ -12,11 +15,19 @@ class PPOAgent(SBAgent):
         self._model = model
 
     @staticmethod
-    def create(env: F110_SB_Env) -> SBAgent:
+    def create(
+        env: F110_SB_Env,
+        learning_rate=0.0003,
+        n_steps=512,
+        batch_size=64,
+        n_epochs=10,
+        gamma=0.99,
+        net_arch=dict(pi=[128, 64], vf=[128, 64]),
+    ) -> SBAgent:
         policy_kwargs = {
             "features_extractor_class": CustomCombinedExtractor,
             "features_extractor_kwargs": {"features_dim": 256},
-            "net_arch": dict(pi=[128, 64], vf=[128, 64]),
+            "net_arch": net_arch,
         }
 
         model = PPO(
@@ -24,11 +35,11 @@ class PPOAgent(SBAgent):
             env,
             policy_kwargs=policy_kwargs,
             verbose=1,
-            learning_rate=0.0003,
-            n_steps=512,
-            batch_size=64,
-            n_epochs=10,
-            gamma=0.99,
+            learning_rate=learning_rate,
+            n_steps=n_steps,
+            batch_size=batch_size,
+            n_epochs=n_epochs,
+            gamma=gamma,
             tensorboard_log="./tensorboard_logs/",
         )
 

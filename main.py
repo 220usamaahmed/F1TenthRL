@@ -3,6 +3,7 @@ from src.agent import SBAgentLearningException
 from src.dummy_agent import DummyAgent
 from src.ppo_agent import PPOAgent
 from src.playback_agent import PlaybackAgent
+from src.ppo_agent_optuna import run_ppo_agent_study
 from src.utils import *
 
 
@@ -46,14 +47,15 @@ def main():
 
     # run_dummy_agent(env)
     # train_ppo_agent(env)
-    run_ppo_agent(
-        env,
-        "./models/ppo_agent_24-11-21_16:49:12",  # Trained on example
-        # "./models/ppo_agent_24-11-22_01:06:42"  # Trained on circle
-    )
+    # run_ppo_agent(
+    #     env,
+    #     "./models/ppo_agent_24-11-21_16:49:12",  # Trained on example
+    #     # "./models/ppo_agent_24-11-22_01:06:42"  # Trained on circle
+    # )
     # run_playback_agent(
     #     env, "./action_recordings/ppo_agent_inf_issue-24-11-29_13:03:01/episode_1.csv"
     # )
+    run_ppo_agent_study()
 
 
 if __name__ == "__main__":
