@@ -12,13 +12,15 @@
 - [x] Use normalized action and observations space values and scale according to env params
 - [x] Fix camera movement in visualization
 - [x] Add visulization for action and observation values
+- [x] Explore optuna for hyper paramter tuning
+- [x] Save rewards, observations and info in recording. There is probably an issue with NaN in there
+- [ ] Use command line args for main
+- [ ] Save optuna study
 - [ ] Setup some way of passing reward functions to env in order to compare different ones
-- [ ] Add observation recording and playback overlay in visualization
+- [ ] Playback overlay in visualization
 - [ ] Save hyperparamter and env details with model saves
 - [ ] Add additional agents as obsticles 
 - [ ] Add additional running agents
-- [ ] Explore optuna for hyper paramter tuning
-- [ ] Save rewards, observations and info in recording. There is probably an issue with NaN in there
 
 # Reading List
 - [ ] https://www.youtube.com/watch?v=aTDkYFZFWug

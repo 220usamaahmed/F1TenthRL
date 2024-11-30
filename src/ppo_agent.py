@@ -6,7 +6,6 @@ from src.f110_sb_env import F110_SB_Env
 from src.feature_extractor import CustomCombinedExtractor
 import numpy as np
 from stable_baselines3 import PPO
-import optuna
 
 
 class PPOAgent(SBAgent):
@@ -23,6 +22,8 @@ class PPOAgent(SBAgent):
         n_epochs=10,
         gamma=0.99,
         net_arch=dict(pi=[128, 64], vf=[128, 64]),
+        verbose=True,
+        tensorboard_logs: typing.Union[str, None] = "./tensorboard_logs",
     ) -> SBAgent:
         policy_kwargs = {
             "features_extractor_class": CustomCombinedExtractor,
@@ -34,13 +35,13 @@ class PPOAgent(SBAgent):
             "MultiInputPolicy",
             env,
             policy_kwargs=policy_kwargs,
-            verbose=1,
+            verbose=verbose,
             learning_rate=learning_rate,
             n_steps=n_steps,
             batch_size=batch_size,
             n_epochs=n_epochs,
             gamma=gamma,
-            tensorboard_log="./tensorboard_logs/",
+            tensorboard_log=tensorboard_logs,
         )
 
         return PPOAgent(model)

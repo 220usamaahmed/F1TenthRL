@@ -4,6 +4,7 @@ from datetime import datetime
 from argparse import Namespace
 import os
 import numpy as np
+import csv
 from src.agent import Agent
 from src.f110_sb_env import F110_SB_Env
 from src.runtime_visualization import RuntimeVisualizer
@@ -110,3 +111,21 @@ def save_recording(name: str, actions, rewards, observations, infos):
 
 def get_date_tag() -> str:
     return datetime.now().strftime("%y-%m-%d_%H:%M:%S")
+
+
+def save_dict_list_to_csv(file_path, dict_list):
+    if not dict_list:
+        raise ValueError("The list of dictionaries is empty.")
+
+    headers = dict_list[0].keys()
+
+    with open(file_path, mode="w", newline="", encoding="utf-8") as file:
+        writer = csv.DictWriter(file, fieldnames=headers)
+        writer.writeheader()
+
+        for row in dict_list:
+            processed_row = {
+                key: (str(value) if isinstance(value, dict) else value)
+                for key, value in row.items()
+            }
+            writer.writerow(processed_row)

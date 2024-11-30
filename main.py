@@ -3,7 +3,7 @@ from src.agent import SBAgentLearningException
 from src.dummy_agent import DummyAgent
 from src.ppo_agent import PPOAgent
 from src.playback_agent import PlaybackAgent
-from src.ppo_agent_optuna import run_ppo_agent_study
+from src.ppo_agent_optuna import run_ppo_agent_study, display_study_results
 from src.utils import *
 
 
@@ -56,6 +56,7 @@ def main():
     #     env, "./action_recordings/ppo_agent_inf_issue-24-11-29_13:03:01/episode_1.csv"
     # )
     run_ppo_agent_study()
+    # display_study_results()
 
 
 if __name__ == "__main__":
