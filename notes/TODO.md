@@ -14,11 +14,16 @@
 - [x] Add visulization for action and observation values
 - [x] Explore optuna for hyper paramter tuning
 - [x] Save rewards, observations and info in recording. There is probably an issue with NaN in there
+- [x] Save hyperparamter and env details with model saves
+- [x] Save optuna study
+- [ ] Use random seeding during training
+- [ ] Change env to end after one lap
+- [ ] Save intermediate models
+- [ ] Make study with different reward functions
+- [ ] Change env map on reset
 - [ ] Use command line args for main
-- [ ] Save optuna study
 - [ ] Setup some way of passing reward functions to env in order to compare different ones
 - [ ] Playback overlay in visualization
-- [ ] Save hyperparamter and env details with model saves
 - [ ] Add additional agents as obsticles 
 - [ ] Add additional running agents
 

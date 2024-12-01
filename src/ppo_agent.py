@@ -47,8 +47,10 @@ class PPOAgent(SBAgent):
         return PPOAgent(model)
 
     @staticmethod
-    def create_from_saved_model(model_path: str) -> SBAgent:
+    def create_from_saved_model(model_path: str, env=None) -> SBAgent:
         model = PPO.load(model_path)
+        if env is not None:
+            model.set_env(env)
         return PPOAgent(model)
 
     def take_action(self, obs: typing.Dict, deterministic: bool = False) -> np.ndarray:
@@ -56,10 +58,11 @@ class PPOAgent(SBAgent):
         return action
 
     def learn(self, total_timesteps=1000):
-        try:
-            self._model.learn(total_timesteps=total_timesteps)
-        except Exception as e:
-            raise SBAgentLearningException(e)
+        self._model.learn(total_timesteps=total_timesteps)
+        # try:
+        #     self._model.learn(total_timesteps=total_timesteps)
+        # except Exception as e:
+        #     raise SBAgentLearningException(e)
 
     def save_model(self, model_path: str):
         self._model.save(f"{model_path}.zip")

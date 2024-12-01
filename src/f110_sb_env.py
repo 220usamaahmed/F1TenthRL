@@ -11,7 +11,7 @@ class F110_SB_Env(gymnasium.Env):
 
     DEFAULT_NUM_BEAMS = 1080
     DEFAULT_FOV = 4.7
-    DEFAULT_MAX_RANGE = 30.0
+    DEFAULT_MAX_RANGE = 5.0
     DEFAULT_SV_MIN = -3.2
     DEFAULT_SV_MAX = 3.2
     DEFAULT_S_MIN = -0.4189
@@ -193,26 +193,57 @@ class F110_SB_Env(gymnasium.Env):
 
         return transformed_obs, transformed_info
 
-    def _shape_reward(self, env_reward, obs) -> float:
-        reward = env_reward
-
-        if obs["collisions"][0] == 1.0:
-            reward = -1
-        else:
-            velocity = obs["linear_vels_x"][0]
-            reward = 0.1 if velocity > 0 else -0.5
-
-            # reward = (1 / self._v_max) * velocity
-            # angular_velocity = obs["ang_vels_z"][0]
-            # reward += 0.1 * velocity - 0.1 * angular_velocity
-
-        return reward
-
     def _reset_recording(self):
         self._recorded_actions = []
         self._recorded_rewards = []
         self._recorded_observations = []
         self._recorded_info = []
+
+    def _shape_reward(self, env_reward, obs, info) -> float:
+        return self._r3(obs, info)
+
+    def _r1(self, obs, info):
+        reward = 0
+
+        if info["checkpoint_done"][0]:
+            reward = +1
+        elif obs["collisions"][0] == 1.0:
+            reward = -1
+        else:
+            velocity = obs["linear_vels_x"][0]
+            reward = 0.1 if velocity > 0 else -0.1
+
+        return reward
+
+    def _r2(self, obs, info):
+        reward = 0
+
+        if info["checkpoint_done"][0]:
+            reward = +1
+        elif obs["collisions"][0] == 1.0:
+            reward = -1
+        else:
+            velocity = obs["linear_vels_x"][0]
+            reward = (1 / self._v_max) * velocity
+            angular_velocity = obs["ang_vels_z"][0]
+            reward += 0.1 * velocity - 0.1 * angular_velocity
+
+        return reward
+
+    def _r3(self, obs, info):
+        distance_to_boundary = np.min(obs["scans"][0])
+
+        if info["checkpoint_done"][0]:
+            reward = +1
+        elif obs["collisions"][0] == 1.0:
+            reward = -1
+        else:
+            velocity = obs["linear_vels_x"][0]
+            r_vel = velocity / self._v_max
+            r_dist = distance_to_boundary / self._max_range
+            reward = 0.2 * r_vel + 0.8 * r_dist
+
+        return reward
 
     def enable_beam_rendering(self):
         self._beam_rendering_enabled = True
@@ -238,7 +269,7 @@ class F110_SB_Env(gymnasium.Env):
         transformed_obs, transformed_info = self._transform_obs_and_info_for_sb(
             obs, info
         )
-        shaped_reward = self._shape_reward(reward, obs)
+        shaped_reward = self._shape_reward(reward, obs, info)
 
         if self.record:
             self._reset_recording()
@@ -265,7 +296,7 @@ class F110_SB_Env(gymnasium.Env):
         transformed_obs, transformed_info = self._transform_obs_and_info_for_sb(
             obs, info
         )
-        shaped_reward = self._shape_reward(step_reward, obs)
+        shaped_reward = self._shape_reward(step_reward, obs, info)
         terminated = done or obs["collisions"][0] == 1.0
 
         # TODO: Check if max timesteps have been reached

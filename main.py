@@ -14,8 +14,20 @@ def run_dummy_agent(env: F110_SB_Env):
 
 def train_ppo_agent(env: F110_SB_Env):
     try:
-        ppo_agent = PPOAgent.create(env)
-        ppo_agent.learn(total_timesteps=100000)
+        # Hyper paramters from Optuna study
+        ppo_agent = PPOAgent.create(
+            env,
+            learning_rate=0.00038641971654092917,
+            n_steps=1024,
+            batch_size=32,
+            n_epochs=5,
+            gamma=0.9780603367895372,
+            net_arch=dict(pi=[64, 32], vf=[256, 128]),
+        )
+        # ppo_agent = PPOAgent.create_from_saved_model(
+        #     "./models/ppo_agent_24-12-01_12:51:16", env=env
+        # )
+        ppo_agent.learn(total_timesteps=50000)
         ppo_agent.save_model(f"./models/ppo_agent_{get_date_tag()}")
         run_environment(env, ppo_agent, deterministic=True, verbose=False)
     except SBAgentLearningException as e:
@@ -32,7 +44,7 @@ def train_ppo_agent(env: F110_SB_Env):
 def run_ppo_agent(env: F110_SB_Env, model_path: str):
     ppo_agent = PPOAgent.create_from_saved_model(model_path)
     env.enable_recording()
-    run_environment(env, ppo_agent, deterministic=True, verbose=False)
+    run_environment(env, ppo_agent, deterministic=True, verbose=True)
 
 
 def run_playback_agent(env: F110_SB_Env, save_file: str):
@@ -42,12 +54,12 @@ def run_playback_agent(env: F110_SB_Env, save_file: str):
 
 def main():
     config = load_map_config("example")
-    env = build_env(config, enable_recording=True)
+    env = build_env(config, enable_recording=False)
     # check_env(env, warn=False)
 
     # run_dummy_agent(env)
     # train_ppo_agent(env)
-    run_ppo_agent(env, "./models/ppo_agent_24-11-30_23:22:10")
+    run_ppo_agent(env, "./models/ppo_agent_24-12-01_14:30:03")
     # run_playback_agent(
     #     env, "./action_recordings/ppo_agent_inf_issue-24-11-29_13:03:01/episode_1.csv"
     # )
