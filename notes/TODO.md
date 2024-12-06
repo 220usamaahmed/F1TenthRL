@@ -26,6 +26,7 @@
 - [ ] Playback overlay in visualization
 - [ ] Add additional agents as obsticles 
 - [ ] Add additional running agents
+- [ ] Explore imitation learning
 
 # Reading List
 - [ ] https://www.youtube.com/watch?v=aTDkYFZFWug
@@ -34,3 +35,4 @@
 - [ ] gSDE (Generalized State-Dependent Exploration)
 - [ ] Reward normalization?
 - [ ] https://medium.com/aureliantactics/ppo-hyperparameters-and-ranges-6fc2d29bccbe
+- [ ] https://github.com/f1tenth/f1tenth_racetracks?tab=readme-ov-file
