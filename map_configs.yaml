@@ -1,15 +1,11 @@
 circle:
   map_path: './maps/circle/circle'
   map_ext: '.png'
-  starting_x: 5.75
-  starting_y: 0
-  starting_theta: 1.57
+  starting_poses: [[5.75, 0, 1.57]]
   max_timesteps: 1000
 
 example:
   map_path: './maps/example/example_map'
   map_ext: '.png'
-  starting_x: 0
-  starting_y: 0
-  starting_theta: 1.57
+  starting_poses: [[0, 0, 1.57], [-1, 0, 1.57], [1, 0, 1.57]]
   max_timesteps: 1000

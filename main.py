@@ -54,7 +54,12 @@ def run_playback_agent(env: F110_SB_Env, save_file: str):
 
 def main():
     config = load_map_config("example")
-    env = build_env(config, enable_recording=False)
+    env = build_env(
+        config,
+        other_agents=[DummyAgent(0, 0), DummyAgent(0, 0)],
+        # other_agents=[],
+        enable_recording=False,
+    )
     # check_env(env, warn=False)
 
     # run_dummy_agent(env)

@@ -1,3 +1,4 @@
+import typing
 import yaml
 from datetime import datetime
 from argparse import Namespace
@@ -19,11 +20,20 @@ def load_map_config(map_name: str) -> Namespace:
     return Namespace(**map_config)
 
 
-def build_env(config: Namespace, enable_recording=False) -> F110_SB_Env:
+def build_env(
+    config: Namespace, other_agents: typing.List[Agent] = [], enable_recording=False
+) -> F110_SB_Env:
+    starting_poses = config.starting_poses
+    assert (
+        len(starting_poses) >= len(other_agents) + 1
+    ), "This env doesn't have enough starting poses specified"
+    starting_poses = starting_poses[: len(other_agents) + 1]
+
     return F110_SB_Env(
         map=config.map_path,
         map_ext=config.map_ext,
-        reset_pose=(config.starting_x, config.starting_y, config.starting_theta),
+        reset_poses=starting_poses,
+        other_agents=other_agents,
         record=enable_recording,
     )
 

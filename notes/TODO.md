@@ -16,16 +16,16 @@
 - [x] Save rewards, observations and info in recording. There is probably an issue with NaN in there
 - [x] Save hyperparamter and env details with model saves
 - [x] Save optuna study
+- [x] Change env to end after one lap
+- [x] Save intermediate models
+- [x] Add additional agents as obsticles 
+- [x] Add additional running agents
 - [ ] Use random seeding during training
-- [ ] Change env to end after one lap
-- [ ] Save intermediate models
 - [ ] Make study with different reward functions
 - [ ] Change env map on reset
 - [ ] Use command line args for main
 - [ ] Setup some way of passing reward functions to env in order to compare different ones
 - [ ] Playback overlay in visualization
-- [ ] Add additional agents as obsticles 
-- [ ] Add additional running agents
 - [ ] Explore imitation learning
 
 # Reading List
