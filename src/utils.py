@@ -1,4 +1,3 @@
-from math import trunc
 import yaml
 from datetime import datetime
 from argparse import Namespace
