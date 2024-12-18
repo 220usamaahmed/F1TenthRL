@@ -7,5 +7,6 @@ circle:
 example:
   map_path: './maps/example/example_map'
   map_ext: '.png'
-  starting_poses: [[0, 0, 1.57], [-1, 0, 1.57], [1, 0, 1.57]]
+  starting_poses: [[0, 0, 1.57], [-1, 0, 0], [1, 0, 0], [0, 5, 1.57]]
+  # starting_poses: [[0, 0, 1.57]]
   max_timesteps: 1000

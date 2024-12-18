@@ -8,8 +8,8 @@ from src.utils import *
 
 
 def run_dummy_agent(env: F110_SB_Env):
-    dummy_agent = DummyAgent(steer=0.1, speed=0.1)
-    run_environment(env, dummy_agent, max_timesteps=300, verbose=False)
+    dummy_agent = DummyAgent(steer=0.0, speed=0.0)
+    run_environment(env, dummy_agent, verbose=False)
 
 
 def train_ppo_agent(env: F110_SB_Env):
@@ -25,9 +25,9 @@ def train_ppo_agent(env: F110_SB_Env):
             net_arch=dict(pi=[64, 32], vf=[256, 128]),
         )
         # ppo_agent = PPOAgent.create_from_saved_model(
-        #     "./models/ppo_agent_24-12-01_12:51:16", env=env
+        #     "", env=env
         # )
-        ppo_agent.learn(total_timesteps=50000)
+        ppo_agent.learn(total_timesteps=100000)
         ppo_agent.save_model(f"./models/ppo_agent_{get_date_tag()}")
         run_environment(env, ppo_agent, deterministic=True, verbose=False)
     except SBAgentLearningException as e:
@@ -56,20 +56,22 @@ def main():
     config = load_map_config("example")
     env = build_env(
         config,
-        other_agents=[DummyAgent(0, 0), DummyAgent(0, 0)],
+        other_agents=[DummyAgent(0, 0) for _ in range(len(config.starting_poses) - 1)],
         # other_agents=[],
-        enable_recording=False,
+        enable_recording=True,
     )
     # check_env(env, warn=False)
 
     # run_dummy_agent(env)
+
     # train_ppo_agent(env)
-    run_ppo_agent(env, "./models/ppo_agent_24-12-01_14:30:03")
+    # run_ppo_agent(env, "./models/ppo_agent_24-12-01_14:30:03")
+    # run_ppo_agent_study()
+    display_study_results()
+
     # run_playback_agent(
     #     env, "./action_recordings/ppo_agent_inf_issue-24-11-29_13:03:01/episode_1.csv"
     # )
-    # run_ppo_agent_study()
-    # display_study_results()
 
 
 if __name__ == "__main__":
