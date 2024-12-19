@@ -20,12 +20,10 @@
 - [x] Save intermediate models
 - [x] Add additional agents as obsticles 
 - [x] Add additional running agents
-- [ ] Use random seeding during training
-- [ ] Make study with different reward functions
 - [ ] Change env map on reset
-- [ ] Use command line args for main
-- [ ] Setup some way of passing reward functions to env in order to compare different ones
-- [ ] Playback overlay in visualization
+- [ ] Use random seeding during training
+- [ ] Use optima to find loss function component weights
+- [ ] Add reward based on lap time
 - [ ] Explore imitation learning
 
 # Reading List
