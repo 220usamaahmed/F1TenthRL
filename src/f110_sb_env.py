@@ -264,6 +264,50 @@ class F110_SB_Env(gymnasium.Env):
 
         return reward
 
+    def _r4(self, obs, info, idx):
+        distance_to_boundary = np.min(obs["scans"][idx])
+
+        if info["checkpoint_done"][idx]:
+            reward = +1
+        elif obs["collisions"][idx] == 1.0:
+            reward = -1
+        else:
+            velocity = obs["linear_vels_x"][idx]
+            angular_velocity = obs["ang_vels_z"][idx]
+
+            r_vel = velocity / self._v_max
+            r_dist = distance_to_boundary / self._max_range
+            r_a_vel = 1 - min(1, abs(angular_velocity) / self._sv_max)
+
+            reward = 0.1 * r_vel + 0.85 * r_dist + 0.05 * r_a_vel
+
+        return reward
+
+    def _r5(self, obs, info, idx):
+        distance_to_boundary = np.min(obs["scans"][idx])
+
+        if info["checkpoint_done"][idx]:
+            reward = +1
+        elif obs["collisions"][idx] == 1.0:
+            reward = -1
+        else:
+            velocity = obs["linear_vels_x"][idx]
+            angular_velocity = obs["ang_vels_z"][idx]
+            previous_angular_velocity = (
+                0
+                if self._previous_obs is None
+                else self._previous_obs["ang_vels_z"][idx]
+            )
+            angular_velocity_delta = angular_velocity - previous_angular_velocity
+
+            r_vel = velocity / self._v_max
+            r_dist = distance_to_boundary / self._max_range
+            r_a_vel = 1 - min(1, abs(angular_velocity_delta) / (2 * self._sv_max))
+
+            reward = 0.1 * r_vel + 0.85 * r_dist + 0.05 * r_a_vel
+
+        return reward
+
     def enable_beam_rendering(self):
         self._beam_rendering_enabled = True
 
@@ -325,8 +369,6 @@ class F110_SB_Env(gymnasium.Env):
     def step(self, action):
         actions = self._get_actions(action)
         obs, step_reward, done, info = self.env.step(actions)
-        self._previous_obs = obs
-        self._previous_info = info
 
         transformed_obs, transformed_info = self._transform_obs_and_info_for_sb(
             obs, info
@@ -339,12 +381,15 @@ class F110_SB_Env(gymnasium.Env):
 
         if self.record:
             self._recorded_actions.append(action)
-            self._recorded_rewards.append(step_reward)
+            self._recorded_rewards.append(shaped_reward)
             self._recorded_observations.append(transformed_obs)
             self._recorded_info.append(transformed_info)
 
         if self._beam_rendering_enabled:
             self._update_beam_gl_lines(obs)
+
+        self._previous_obs = obs
+        self._previous_info = info
 
         return (
             transformed_obs,
