@@ -21,7 +21,8 @@ class F110_SB_Env(gymnasium.Env):
     DEFAULT_S_MAX = 0.4189
     DEFAULT_V_MIN = -5
     DEFAULT_V_MAX = 10
-    ACTION_DAMPING_FACTORS = np.array([0.5, 0.5])
+    # ACTION_DAMPING_FACTORS = np.array([0.5, 0.5])
+    ACTION_DAMPING_FACTORS = np.array([0.0, 0.0])
     EGO_IDX = 0
 
     def __init__(
@@ -32,6 +33,7 @@ class F110_SB_Env(gymnasium.Env):
         other_agents: typing.List["Agent"],
         params: typing.Dict = {},
         lidar_params: typing.Dict = {},
+        reward_params: typing.Dict = {},
         record=False,
     ):
         assert (
@@ -81,6 +83,8 @@ class F110_SB_Env(gymnasium.Env):
             "v_min": self._v_min,
             "v_max": self._v_max,
         }
+
+        self._reward_parms = reward_params
 
         assert self._s_min < 0 and self._s_max > 0
         assert self._v_min < 0 and self._v_max > 0
@@ -284,6 +288,46 @@ class F110_SB_Env(gymnasium.Env):
         return reward
 
     def _r5(self, obs, info, idx):
+        distance_to_boundary = np.min(obs["scans"][idx])
+
+        if info["checkpoint_done"][idx]:
+            reward = +1
+        elif obs["collisions"][idx] == 1.0:
+            reward = -1
+        else:
+            velocity = obs["linear_vels_x"][idx]
+            angular_velocity = obs["ang_vels_z"][idx]
+            previous_angular_velocity = (
+                0
+                if self._previous_obs is None
+                else self._previous_obs["ang_vels_z"][idx]
+            )
+            angular_velocity_delta = angular_velocity - previous_angular_velocity
+
+            r_vel = velocity / self._v_max
+            r_dist = distance_to_boundary / self._max_range
+            r_a_vel = 1 - min(1, abs(angular_velocity_delta) / (2 * self._sv_max))
+
+            reward = 0.1 * r_vel + 0.85 * r_dist + 0.05 * r_a_vel
+
+        return reward
+
+    def _r6(self, obs, info, idx):
+        # TODO: Use the reward params
+
+        """
+        Generic reward function that weights each component based on reward
+        paramters passed to the environment.
+
+        The following components are considered:
+            - x linear velocity
+            - y linear velocity
+            - z angular velocity
+            - change in z angular velocity
+            - min distance to boundry
+            - change in min distance to boundry
+            - others?
+        """
         distance_to_boundary = np.min(obs["scans"][idx])
 
         if info["checkpoint_done"][idx]:
