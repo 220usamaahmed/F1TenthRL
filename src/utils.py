@@ -60,7 +60,7 @@ def run_environment(
             action = agent.take_action(obs, deterministic=deterministic)
             obs, step_reward, terminated, truncated, info = env.step(action)
 
-            rv.add_data(action, obs)
+            rv.add_data(action, obs, step_reward)
             env.render(mode=render_mode)
 
             if verbose:

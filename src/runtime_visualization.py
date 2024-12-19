@@ -60,15 +60,21 @@ class RuntimeVisualizer:
         action_legend.addItem(steer_curve, "Steer")
         action_legend.addItem(speed_curve, "Speed")
 
+        win.nextRow()
+
+        reward_plot = win.addPlot(title="Reward")
+        reward_curve = reward_plot.plot(pen="y")
+
         x_lin_vel_data = deque(maxlen=RuntimeVisualizer.WINDOW_SIZE)
         y_lin_vel_data = deque(maxlen=RuntimeVisualizer.WINDOW_SIZE)
         z_ang_vel_data = deque(maxlen=RuntimeVisualizer.WINDOW_SIZE)
         steer_data = deque(maxlen=RuntimeVisualizer.WINDOW_SIZE)
         speed_data = deque(maxlen=RuntimeVisualizer.WINDOW_SIZE)
+        reward_data = deque(maxlen=RuntimeVisualizer.WINDOW_SIZE)
 
         def update():
             while not queue.empty():
-                action, observation = queue.get()
+                action, observation, reward = queue.get()
 
                 x_lin_vel_data.append(observation["linear_vel_x"])
                 y_lin_vel_data.append(observation["linear_vel_y"])
@@ -76,6 +82,8 @@ class RuntimeVisualizer:
 
                 steer_data.append(action[0])
                 speed_data.append(action[1])
+
+                reward_data.append(reward)
 
             n = len(x_lin_vel_data)
             x = np.linspace(0, n, n)
@@ -87,6 +95,8 @@ class RuntimeVisualizer:
             steer_curve.setData(x, steer_data)
             speed_curve.setData(x, speed_data)
 
+            reward_curve.setData(x, reward_data)
+
         timer = QtCore.QTimer()
         timer.timeout.connect(update)
         timer.start(30)
@@ -96,10 +106,11 @@ class RuntimeVisualizer:
     def start(self):
         self._pyqt_process.start()
 
-    def add_data(self, action, observation):
+    def add_data(self, action, observation, reward):
         if self._pyqt_process.is_alive():
-            self._data_queue.put((action, observation))
+            self._data_queue.put((action, observation, reward))
 
     def exit(self):
+        self._data_queue.close()
         self._pyqt_process.terminate()
         self._pyqt_process.join()
