@@ -11,7 +11,6 @@ if typing.TYPE_CHECKING:
 
 
 class F110_SB_Env(gymnasium.Env):
-
     DEFAULT_NUM_BEAMS = 1080
     DEFAULT_FOV = 4.7
     DEFAULT_MAX_RANGE = 5.0
@@ -21,8 +20,8 @@ class F110_SB_Env(gymnasium.Env):
     DEFAULT_S_MAX = 0.4189
     DEFAULT_V_MIN = -5
     DEFAULT_V_MAX = 10
-    # ACTION_DAMPING_FACTORS = np.array([0.5, 0.5])
-    ACTION_DAMPING_FACTORS = np.array([0.0, 0.0])
+    ACTION_DAMPING_FACTORS = np.array([0.5, 0.5])
+    # ACTION_DAMPING_FACTORS = np.array([0.0, 0.0])
     EGO_IDX = 0
 
     def __init__(
@@ -36,9 +35,9 @@ class F110_SB_Env(gymnasium.Env):
         reward_params: typing.Dict = {},
         record=False,
     ):
-        assert (
-            len(reset_poses) == len(other_agents) + 1
-        ), f"{len(reset_poses)} reset pose(s) given but there are {len(other_agents) + 1} agent(s)"
+        assert len(reset_poses) == len(other_agents) + 1, (
+            f"{len(reset_poses)} reset pose(s) given but there are {len(other_agents) + 1} agent(s)"
+        )
 
         self.map = map
         self.map_ext = map_ext
@@ -209,6 +208,9 @@ class F110_SB_Env(gymnasium.Env):
         # assert not np.isnan(transformed_obs["linear_vel_y"]), "NaN in lin vel y"
 
         transformed_info = {
+            "pose_x": obs["poses_x"][idx],
+            "pose_y": obs["poses_y"][idx],
+            "pose_theta": obs["poses_theta"][idx],
             "lap_time": obs["lap_times"][idx],
             "lap_count": obs["lap_counts"][idx],
             "checkpoint_done": info["checkpoint_done"][idx],
@@ -391,10 +393,14 @@ class F110_SB_Env(gymnasium.Env):
     def _get_actions(self, ego_action):
         all_actions = [ego_action]
         for i, agent in enumerate(self.other_agents):
-            current_transformed_obs, _ = self._transform_obs_and_info_for_sb(
-                self._previous_obs, self._previous_info, i
+            current_transformed_obs, current_transformed_info = (
+                self._transform_obs_and_info_for_sb(
+                    self._previous_obs, self._previous_info, i
+                )
             )
-            all_actions.append(agent.take_action(current_transformed_obs))
+            all_actions.append(
+                agent.take_action(current_transformed_obs, current_transformed_info)
+            )
         all_actions = np.array(all_actions)
 
         if self._previous_actions is None:

@@ -53,7 +53,9 @@ class PPOAgent(SBAgent):
             model.set_env(env)
         return PPOAgent(model)
 
-    def take_action(self, obs: typing.Dict, deterministic: bool = False) -> np.ndarray:
+    def take_action(
+        self, obs: typing.Dict, info: typing.Dict, deterministic: bool = False
+    ) -> np.ndarray:
         action, _ = self._model.predict(obs, deterministic=deterministic)
         return action
 

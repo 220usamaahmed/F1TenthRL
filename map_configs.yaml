@@ -1,3 +1,4 @@
+# -- Local repository maps --
 circle:
   map_path: './maps/circle/circle'
   map_ext: '.png'
@@ -9,4 +10,15 @@ example:
   map_ext: '.png'
   starting_poses: [[0, 0, 1.57], [-1, 0, 0], [1, 0, 0], [0, 5, 1.57]]
   # starting_poses: [[0, 0, 1.57]]
+  max_timesteps: 1000
+
+# -- Maps provided by F1Tenth Racetracks Repo --
+
+# Clone git@github.com:f1tenth/f1tenth_racetracks.git
+# Replace the file paths
+
+austin:
+  map_path: '../f1tenth_racetracks/Austin/Austin_map'
+  map_ext: '.png'
+  starting_poses: [[-0.4108859, -0.6907978, 5.6364428]]
   max_timesteps: 1000

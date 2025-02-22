@@ -57,7 +57,7 @@ def run_environment(
                 break
             t += 1
 
-            action = agent.take_action(obs, deterministic=deterministic)
+            action = agent.take_action(obs, info, deterministic=deterministic)
             obs, step_reward, terminated, truncated, info = env.step(action)
 
             rv.add_data(action, obs, step_reward)
@@ -79,10 +79,10 @@ def evaluate(env: F110_SB_Env, agent: Agent, n_eval_episodes=10):
     reward_sums = []
 
     for _ in range(n_eval_episodes):
-        obs, _ = env.reset()
+        obs, info = env.reset()
         reward_sum = 0
         while True:
-            action = agent.take_action(obs, deterministic=False)
+            action = agent.take_action(obs, info, deterministic=False)
             obs, step_reward, terminated, truncated, _ = env.step(action)
             reward_sum += step_reward
 

@@ -9,7 +9,7 @@ class Agent(ABC):
 
     @abstractmethod
     def take_action(
-        self, obs: typing.Dict, deterministic: bool = True
+        self, obs: typing.Dict, info: typing.Dict, deterministic: bool = True
     ) -> np.ndarray: ...
 
 
