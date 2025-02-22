@@ -21,12 +21,17 @@ def load_map_config(map_name: str) -> Namespace:
 
 
 def build_env(
-    config: Namespace, other_agents: typing.List[Agent] = [], enable_recording=False
+    config: Namespace,
+    other_agents: typing.List[Agent] = [],
+    params: typing.Dict = {},
+    lidar_params: typing.Dict = {},
+    reward_params: typing.Dict = {},
+    enable_recording=False,
 ) -> F110_SB_Env:
     starting_poses = config.starting_poses
-    assert (
-        len(starting_poses) >= len(other_agents) + 1
-    ), "This env doesn't have enough starting poses specified"
+    assert len(starting_poses) >= len(other_agents) + 1, (
+        "This env doesn't have enough starting poses specified"
+    )
     starting_poses = starting_poses[: len(other_agents) + 1]
 
     return F110_SB_Env(
@@ -34,6 +39,9 @@ def build_env(
         map_ext=config.map_ext,
         reset_poses=starting_poses,
         other_agents=other_agents,
+        params=params,
+        lidar_params=lidar_params,
+        reward_params=reward_params,
         record=enable_recording,
     )
 
