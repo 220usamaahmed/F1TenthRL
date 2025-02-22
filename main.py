@@ -78,16 +78,20 @@ def main():
     config = load_map_config("example")
     env = build_env(
         config,
-        other_agents=[DummyAgent(0, 0) for _ in range(len(config.starting_poses) - 1)],
-        # other_agents=[],
-        enable_recording=True,
+        # other_agents=[DummyAgent(0, 0) for _ in range(len(config.starting_poses) - 1)],
+        other_agents=[],
+        enable_recording=False,
     )
     # check_env(env, warn=False)
 
     # run_dummy_agent(env)
 
-    # train_ppo_agent(env)
-    run_ppo_agent(env, "./models/ppo_agent_24-12-01_14:30:03")
+    train_ppo_agent(env)
+
+    # model_filepath = load_latest_model()
+    # print(f"Loading model: {model_filepath}")
+    # run_ppo_agent(env, model_filepath)
+
     # run_ppo_agent_study()
     # display_study_results()
 

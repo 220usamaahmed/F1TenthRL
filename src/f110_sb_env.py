@@ -13,16 +13,17 @@ if typing.TYPE_CHECKING:
 class F110_SB_Env(gymnasium.Env):
     DEFAULT_NUM_BEAMS = 1080
     DEFAULT_FOV = 4.7
-    DEFAULT_MAX_RANGE = 5.0
+    DEFAULT_MAX_RANGE = 10.0
     DEFAULT_SV_MIN = -3.2
     DEFAULT_SV_MAX = 3.2
     DEFAULT_S_MIN = -0.4189
     DEFAULT_S_MAX = 0.4189
     DEFAULT_V_MIN = -5
     DEFAULT_V_MAX = 10
-    ACTION_DAMPING_FACTORS = np.array([0.5, 0.5])
-    # ACTION_DAMPING_FACTORS = np.array([0.0, 0.0])
+    # ACTION_DAMPING_FACTORS = np.array([0.5, 0.5])
+    ACTION_DAMPING_FACTORS = np.array([0.0, 0.0])
     EGO_IDX = 0
+    MAX_EPOCHS = 4000
 
     def __init__(
         self,
@@ -97,6 +98,7 @@ class F110_SB_Env(gymnasium.Env):
         self.observation_space = self._define_observation_space()
 
         self._initialize_f110_gym()
+        self._epochs = 0
 
     def _define_action_space(self):
         # action: (steer, speed)
@@ -225,18 +227,18 @@ class F110_SB_Env(gymnasium.Env):
         self._recorded_info = []
 
     def _shape_reward(self, env_reward, obs, info, idx=EGO_IDX) -> float:
-        return self._r3(obs, info, idx)
+        return self._r1(obs, info, idx)
 
     def _r1(self, obs, info, idx):
         reward = 0
 
         if info["checkpoint_done"][idx]:
-            reward = +1
+            reward = +100
         elif obs["collisions"][idx] == 1.0:
             reward = -1
         else:
             velocity = obs["linear_vels_x"][idx]
-            reward = 0.1 if velocity > 0 else -0.1
+            reward = 0.1 if velocity > 0.1 else -0.1
 
         return reward
 
@@ -333,9 +335,9 @@ class F110_SB_Env(gymnasium.Env):
         distance_to_boundary = np.min(obs["scans"][idx])
 
         if info["checkpoint_done"][idx]:
-            reward = +1
+            reward = +2
         elif obs["collisions"][idx] == 1.0:
-            reward = -1
+            reward = -2
         else:
             velocity = obs["linear_vels_x"][idx]
             angular_velocity = obs["ang_vels_z"][idx]
@@ -350,7 +352,7 @@ class F110_SB_Env(gymnasium.Env):
             r_dist = distance_to_boundary / self._max_range
             r_a_vel = 1 - min(1, abs(angular_velocity_delta) / (2 * self._sv_max))
 
-            reward = 0.1 * r_vel + 0.85 * r_dist + 0.05 * r_a_vel
+            reward = 0.2 * r_vel + 0.8 * r_dist + 0.0 * r_a_vel
 
         return reward
 
@@ -372,6 +374,8 @@ class F110_SB_Env(gymnasium.Env):
         self._reset_recording()
 
     def reset(self, *, seed=None, options=None):
+        self._epochs = 0
+
         obs, reward, _, info = self.env.reset(np.array(self.reset_poses))
         self._previous_obs = obs
         self._previous_info = info
@@ -417,6 +421,8 @@ class F110_SB_Env(gymnasium.Env):
         return scalled_actions
 
     def step(self, action):
+        self._epochs += 1
+
         actions = self._get_actions(action)
         obs, step_reward, done, info = self.env.step(actions)
 
@@ -427,7 +433,7 @@ class F110_SB_Env(gymnasium.Env):
         terminated = done or obs["collisions"][F110_SB_Env.EGO_IDX] == 1.0
 
         # TODO: Check if max timesteps have been reached
-        truncated = False
+        truncated = self._epochs > F110_SB_Env.MAX_EPOCHS
 
         if self.record:
             self._recorded_actions.append(action)
