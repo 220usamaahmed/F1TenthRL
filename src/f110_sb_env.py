@@ -23,7 +23,7 @@ class F110_SB_Env(gymnasium.Env):
     # ACTION_DAMPING_FACTORS = np.array([0.5, 0.5])
     ACTION_DAMPING_FACTORS = np.array([0.0, 0.0])
     EGO_IDX = 0
-    MAX_EPOCHS = 4000
+    MAX_EPOCHS = 6000
 
     def __init__(
         self,
@@ -235,10 +235,10 @@ class F110_SB_Env(gymnasium.Env):
         if info["checkpoint_done"][idx]:
             reward = +100
         elif obs["collisions"][idx] == 1.0:
-            reward = -1
+            reward = -100
         else:
             velocity = obs["linear_vels_x"][idx]
-            reward = 0.1 if velocity > 0.1 else -0.1
+            reward = -0.1 if velocity > 0.1 else -0.5
 
         return reward
 
