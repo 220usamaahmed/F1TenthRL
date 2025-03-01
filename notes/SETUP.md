@@ -32,6 +32,8 @@ python3 waypoint_follow.py
 #### Custom maps
 [Build custom maps](https://f1tenth-gym.readthedocs.io/en/latest/customized_usage.html)
 
+#### Running with ROS
+
 #### Final Set of Dependencies
 ```
 ------------------ ------- ------------------------------------------------------------

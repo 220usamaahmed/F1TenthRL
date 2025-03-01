@@ -24,9 +24,9 @@ def build_env(
     config: Namespace, other_agents: typing.List[Agent] = [], enable_recording=False
 ) -> F110_SB_Env:
     starting_poses = config.starting_poses
-    assert len(starting_poses) >= len(other_agents) + 1, (
-        "This env doesn't have enough starting poses specified"
-    )
+    assert (
+        len(starting_poses) >= len(other_agents) + 1
+    ), "This env doesn't have enough starting poses specified"
     starting_poses = starting_poses[: len(other_agents) + 1]
 
     return F110_SB_Env(
@@ -35,6 +35,11 @@ def build_env(
         reset_poses=starting_poses,
         other_agents=other_agents,
         record=enable_recording,
+        lidar_params={
+            "num_beams": 1081,
+            "max_range": 30.0,
+            "fov": 2.3499999046325684 * 2,
+        },
     )
 
 
@@ -94,13 +99,13 @@ def evaluate(env: F110_SB_Env, agent: Agent, n_eval_episodes=10):
     return np.mean(reward_sums)
 
 
-def load_latest_model():
+def load_latest_model(index_from_end=0):
     base_path = "./models"
     if not os.path.isdir(base_path):
         return None
 
     files = os.listdir(base_path)
-    file = max(files)
+    file = sorted(files, reverse=True)[index_from_end]
     file = os.path.join(
         base_path, os.path.dirname(file), os.path.splitext(os.path.basename(file))[0]
     )

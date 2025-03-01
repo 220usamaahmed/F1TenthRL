@@ -5,6 +5,7 @@ from gymnasium.spaces import Dict, Box
 import numpy as np
 from f110_gym.envs.base_classes import Integrator
 from pyglet.gl import GL_LINES
+from collections import deque
 
 if typing.TYPE_CHECKING:
     from src.agent import Agent
@@ -19,11 +20,13 @@ class F110_SB_Env(gymnasium.Env):
     DEFAULT_S_MIN = -0.4189
     DEFAULT_S_MAX = 0.4189
     DEFAULT_V_MIN = -5
-    DEFAULT_V_MAX = 10
+    DEFAULT_V_MAX = 5
     # ACTION_DAMPING_FACTORS = np.array([0.5, 0.5])
     ACTION_DAMPING_FACTORS = np.array([0.0, 0.0])
     EGO_IDX = 0
     MAX_EPOCHS = 6000
+    MAX_STILL_STEPS = 100
+    STILL_THRESHOLD = 0.1
 
     def __init__(
         self,
@@ -36,9 +39,9 @@ class F110_SB_Env(gymnasium.Env):
         reward_params: typing.Dict = {},
         record=False,
     ):
-        assert len(reset_poses) == len(other_agents) + 1, (
-            f"{len(reset_poses)} reset pose(s) given but there are {len(other_agents) + 1} agent(s)"
-        )
+        assert (
+            len(reset_poses) == len(other_agents) + 1
+        ), f"{len(reset_poses)} reset pose(s) given but there are {len(other_agents) + 1} agent(s)"
 
         self.map = map
         self.map_ext = map_ext
@@ -60,6 +63,7 @@ class F110_SB_Env(gymnasium.Env):
         self._previous_info = None
         self._previous_actions = None
 
+        self._previous_poses = deque(maxlen=self.MAX_STILL_STEPS)
         self._num_beams = lidar_params.get("num_beams", F110_SB_Env.DEFAULT_NUM_BEAMS)
         self._fov = lidar_params.get("fov", F110_SB_Env.DEFAULT_FOV)
         self._max_range = lidar_params.get("max_range", F110_SB_Env.DEFAULT_MAX_RANGE)
@@ -144,7 +148,7 @@ class F110_SB_Env(gymnasium.Env):
             map=self.map,
             map_ext=self.map_ext,
             num_agents=self._num_agents,
-            ego_idx=F110_SB_Env.EGO_IDX,
+            ego_idx=self.EGO_IDX,
             lidar_params=self._lidar_params,
             params=self._params,
             timestep=0.01,
@@ -167,16 +171,16 @@ class F110_SB_Env(gymnasium.Env):
                 self._beam_gl_lines.append(gl_line)
 
         # Updating camera position
-        car_vertices = env_renderer.cars[F110_SB_Env.EGO_IDX].vertices
+        car_vertices = env_renderer.cars[self.EGO_IDX].vertices
         x = np.mean(car_vertices[::2])
         y = np.mean(car_vertices[1::2])
         env_renderer.set_center(x, y)
 
     def _update_beam_gl_lines(self, obs):
-        car_x = obs["poses_x"][F110_SB_Env.EGO_IDX]
-        car_y = obs["poses_y"][F110_SB_Env.EGO_IDX]
-        car_theta = obs["poses_theta"][F110_SB_Env.EGO_IDX]
-        scans = obs["scans"][F110_SB_Env.EGO_IDX]
+        car_x = obs["poses_x"][self.EGO_IDX]
+        car_y = obs["poses_y"][self.EGO_IDX]
+        car_theta = obs["poses_theta"][self.EGO_IDX]
+        scans = obs["scans"][self.EGO_IDX]
 
         for beam_i in range(self._num_beams):
             gl_line = self._beam_gl_lines[beam_i]
@@ -226,23 +230,27 @@ class F110_SB_Env(gymnasium.Env):
         self._recorded_observations = []
         self._recorded_info = []
 
-    def _shape_reward(self, env_reward, obs, info, idx=EGO_IDX) -> float:
-        return self._r1(obs, info, idx)
+    def _shape_reward(self, action, env_reward, obs, info, idx=EGO_IDX) -> float:
+        return self._r6(action, obs, info, idx)
 
-    def _r1(self, obs, info, idx):
+    def _r1(self, action, obs, info, idx):
         reward = 0
 
         if info["checkpoint_done"][idx]:
-            reward = +100
+            reward = +50
         elif obs["collisions"][idx] == 1.0:
-            reward = -100
+            reward = -200
+        elif self._check_truncated():
+            reward = -50
         else:
             velocity = obs["linear_vels_x"][idx]
-            reward = -0.1 if velocity > 0.1 else -0.5
+            steer = action[0]
+            reward = 1 if velocity > 0.1 else -1
+            reward -= 0.1 * abs(steer)
 
         return reward
 
-    def _r2(self, obs, info, idx):
+    def _r2(self, action, obs, info, idx):
         reward = 0
 
         if info["checkpoint_done"][idx]:
@@ -257,7 +265,7 @@ class F110_SB_Env(gymnasium.Env):
 
         return reward
 
-    def _r3(self, obs, info, idx):
+    def _r3(self, action, obs, info, idx):
         distance_to_boundary = np.min(obs["scans"][idx])
 
         if info["checkpoint_done"][idx]:
@@ -272,7 +280,7 @@ class F110_SB_Env(gymnasium.Env):
 
         return reward
 
-    def _r4(self, obs, info, idx):
+    def _r4(self, action, obs, info, idx):
         distance_to_boundary = np.min(obs["scans"][idx])
 
         if info["checkpoint_done"][idx]:
@@ -291,7 +299,7 @@ class F110_SB_Env(gymnasium.Env):
 
         return reward
 
-    def _r5(self, obs, info, idx):
+    def _r5(self, action, obs, info, idx):
         distance_to_boundary = np.min(obs["scans"][idx])
 
         if info["checkpoint_done"][idx]:
@@ -316,7 +324,7 @@ class F110_SB_Env(gymnasium.Env):
 
         return reward
 
-    def _r6(self, obs, info, idx):
+    def _r6(self, action, obs, info, idx):
         # TODO: Use the reward params
 
         """
@@ -332,13 +340,14 @@ class F110_SB_Env(gymnasium.Env):
             - change in min distance to boundry
             - others?
         """
-        distance_to_boundary = np.min(obs["scans"][idx])
-
         if info["checkpoint_done"][idx]:
-            reward = +2
+            reward = +100
         elif obs["collisions"][idx] == 1.0:
-            reward = -2
+            reward = -100
+        elif self._check_truncated():
+            reward = -50
         else:
+            distance_to_boundary = np.min(obs["scans"][idx])
             velocity = obs["linear_vels_x"][idx]
             angular_velocity = obs["ang_vels_z"][idx]
             previous_angular_velocity = (
@@ -348,11 +357,23 @@ class F110_SB_Env(gymnasium.Env):
             )
             angular_velocity_delta = angular_velocity - previous_angular_velocity
 
-            r_vel = velocity / self._v_max
-            r_dist = distance_to_boundary / self._max_range
-            r_a_vel = 1 - min(1, abs(angular_velocity_delta) / (2 * self._sv_max))
+            vel_norm = velocity / self._v_max
+            dist_norm = distance_to_boundary / self._max_range
+            ang_vel_norm = abs(angular_velocity) / self._sv_max
+            ang_vel_del_norm = abs(angular_velocity_delta) / (2 * self._sv_max)
+            steer_norm = action[0]
 
-            reward = 0.2 * r_vel + 0.8 * r_dist + 0.0 * r_a_vel
+            r_vel = vel_norm
+            r_dist = -5 if distance_to_boundary < 0.5 else 0
+            r_a_vel = ang_vel_norm
+            r_a_vel_delta = 1 - min(1, ang_vel_del_norm)
+            r_steer = 1 - abs(steer_norm)
+
+            # reward = 0.2 * r_vel + 0.8 * r_dist + 0.0 * r_a_vel + 0.0 * r_a_vel_delta
+
+            r_vel = 1 if vel_norm > 0.1 else 0
+
+            reward = r_vel + 0.0 * r_steer + r_dist
 
         return reward
 
@@ -375,16 +396,24 @@ class F110_SB_Env(gymnasium.Env):
 
     def reset(self, *, seed=None, options=None):
         self._epochs = 0
+        self._previous_poses = deque(maxlen=self.MAX_STILL_STEPS)
 
         obs, reward, _, info = self.env.reset(np.array(self.reset_poses))
         self._previous_obs = obs
         self._previous_info = info
         self._previous_actions = None
 
+        self._previous_poses.append(
+            (
+                obs["poses_x"][self.EGO_IDX],
+                obs["poses_y"][self.EGO_IDX],
+            )
+        )
+
         transformed_obs, transformed_info = self._transform_obs_and_info_for_sb(
             obs, info
         )
-        shaped_reward = self._shape_reward(reward, obs, info)
+        shaped_reward = self._shape_reward([0, 0], reward, obs, info)
 
         if self.record:
             self._reset_recording()
@@ -420,20 +449,32 @@ class F110_SB_Env(gymnasium.Env):
 
         return scalled_actions
 
+    def _check_if_still(self):
+        if len(self._previous_poses) < self.MAX_STILL_STEPS:
+            return False
+
+        pose_a = self._previous_poses[0]
+        pose_b = self._previous_poses[-1]
+
+        distance = (pose_a[0] - pose_b[0]) ** 2 + (pose_a[1] - pose_b[1]) ** 2
+
+        return distance < self.STILL_THRESHOLD
+
+    def _check_truncated(self):
+        return self._epochs > F110_SB_Env.MAX_EPOCHS or self._check_if_still()
+
     def step(self, action):
         self._epochs += 1
 
         actions = self._get_actions(action)
         obs, step_reward, done, info = self.env.step(actions)
+        truncated = self._check_truncated()
 
         transformed_obs, transformed_info = self._transform_obs_and_info_for_sb(
             obs, info
         )
-        shaped_reward = self._shape_reward(step_reward, obs, info)
-        terminated = done or obs["collisions"][F110_SB_Env.EGO_IDX] == 1.0
-
-        # TODO: Check if max timesteps have been reached
-        truncated = self._epochs > F110_SB_Env.MAX_EPOCHS
+        shaped_reward = self._shape_reward(action, step_reward, obs, info)
+        terminated = done or obs["collisions"][self.EGO_IDX] == 1.0
 
         if self.record:
             self._recorded_actions.append(action)
@@ -446,6 +487,13 @@ class F110_SB_Env(gymnasium.Env):
 
         self._previous_obs = obs
         self._previous_info = info
+
+        self._previous_poses.append(
+            (
+                obs["poses_x"][self.EGO_IDX],
+                obs["poses_y"][self.EGO_IDX],
+            )
+        )
 
         return (
             transformed_obs,

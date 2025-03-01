@@ -12,6 +12,12 @@ example:
   # starting_poses: [[0, 0, 1.57]]
   max_timesteps: 1000
 
+roemerlager:
+  map_path: './maps/r/r'
+  map_ext: '.png'
+  starting_poses: [[0, 0, 0]]
+  max_timesteps: 1000
+
 # -- Maps provided by F1Tenth Racetracks Repo --
 
 # Clone git@github.com:f1tenth/f1tenth_racetracks.git

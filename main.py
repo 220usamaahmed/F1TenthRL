@@ -10,7 +10,7 @@ from src.utils import *
 
 
 def run_dummy_agent(env: F110_SB_Env):
-    dummy_agent = DummyAgent(steer=0.0, speed=0.0)
+    dummy_agent = DummyAgent(steer=0.0, speed=1.0)
     run_environment(env, dummy_agent, verbose=False)
 
 
@@ -75,7 +75,8 @@ def run_raceline_follow_agent(env: F110_SB_Env, map_path: str):
 
 
 def main():
-    config = load_map_config("example")
+    # config = load_map_config("example")
+    config = load_map_config("r")
     env = build_env(
         config,
         # other_agents=[DummyAgent(0, 0) for _ in range(len(config.starting_poses) - 1)],
@@ -86,11 +87,11 @@ def main():
 
     # run_dummy_agent(env)
 
-    train_ppo_agent(env)
+    # train_ppo_agent(env)
 
-    # model_filepath = load_latest_model()
-    # print(f"Loading model: {model_filepath}")
-    # run_ppo_agent(env, model_filepath)
+    model_filepath = load_latest_model(index_from_end=1)
+    print(f"Loading model: {model_filepath}")
+    run_ppo_agent(env, model_filepath)
 
     # run_ppo_agent_study()
     # display_study_results()
