@@ -29,7 +29,7 @@ def train_ppo_agent(env: F110_SB_Env):
         # ppo_agent = PPOAgent.create_from_saved_model(
         #     "", env=env
         # )
-        ppo_agent.learn(total_timesteps=200000)
+        ppo_agent.learn(total_timesteps=100000)
         ppo_agent.save_model(f"./models/ppo_agent_{get_date_tag()}")
         run_environment(env, ppo_agent, deterministic=True, verbose=False)
     except SBAgentLearningException as e:

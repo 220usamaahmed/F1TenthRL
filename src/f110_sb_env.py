@@ -20,7 +20,7 @@ class F110_SB_Env(gymnasium.Env):
     DEFAULT_S_MIN = -0.4189
     DEFAULT_S_MAX = 0.4189
     DEFAULT_V_MIN = -5
-    DEFAULT_V_MAX = 20
+    DEFAULT_V_MAX = 10
     # ACTION_DAMPING_FACTORS = np.array([0.5, 0.5])
     ACTION_DAMPING_FACTORS = np.array([0.0, 0.0])
     EGO_IDX = 0
@@ -341,9 +341,9 @@ class F110_SB_Env(gymnasium.Env):
             - others?
         """
         if info["checkpoint_done"][idx]:
-            reward = +100
+            reward = +1000
         elif obs["collisions"][idx] == 1.0:
-            reward = -100
+            reward = -1000
         elif self._check_truncated():
             reward = -50
         else:
