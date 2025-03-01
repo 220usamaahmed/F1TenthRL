@@ -29,7 +29,7 @@ def train_ppo_agent(env: F110_SB_Env):
         # ppo_agent = PPOAgent.create_from_saved_model(
         #     "", env=env
         # )
-        ppo_agent.learn(total_timesteps=100000)
+        ppo_agent.learn(total_timesteps=200000)
         ppo_agent.save_model(f"./models/ppo_agent_{get_date_tag()}")
         run_environment(env, ppo_agent, deterministic=True, verbose=False)
     except SBAgentLearningException as e:
@@ -76,7 +76,7 @@ def run_raceline_follow_agent(env: F110_SB_Env, map_path: str):
 
 def main():
     # config = load_map_config("example")
-    config = load_map_config("r")
+    config = load_map_config("roemerlager")
     env = build_env(
         config,
         # other_agents=[DummyAgent(0, 0) for _ in range(len(config.starting_poses) - 1)],
@@ -87,11 +87,11 @@ def main():
 
     # run_dummy_agent(env)
 
-    # train_ppo_agent(env)
+    train_ppo_agent(env)
 
-    model_filepath = load_latest_model(index_from_end=1)
-    print(f"Loading model: {model_filepath}")
-    run_ppo_agent(env, model_filepath)
+    # model_filepath = load_latest_model(index_from_end=1)
+    # print(f"Loading model: {model_filepath}")
+    # run_ppo_agent(env, model_filepath)
 
     # run_ppo_agent_study()
     # display_study_results()

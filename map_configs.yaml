@@ -13,7 +13,7 @@ example:
   max_timesteps: 1000
 
 roemerlager:
-  map_path: './maps/r/r'
+  map_path: './maps/roemerlager/roemerlager'
   map_ext: '.png'
   starting_poses: [[0, 0, 0]]
   max_timesteps: 1000

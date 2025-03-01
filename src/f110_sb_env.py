@@ -20,7 +20,7 @@ class F110_SB_Env(gymnasium.Env):
     DEFAULT_S_MIN = -0.4189
     DEFAULT_S_MAX = 0.4189
     DEFAULT_V_MIN = -5
-    DEFAULT_V_MAX = 5
+    DEFAULT_V_MAX = 20
     # ACTION_DAMPING_FACTORS = np.array([0.5, 0.5])
     ACTION_DAMPING_FACTORS = np.array([0.0, 0.0])
     EGO_IDX = 0
