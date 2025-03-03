@@ -43,11 +43,6 @@ def build_env(
         lidar_params=lidar_params,
         reward_params=reward_params,
         record=enable_recording,
-        lidar_params={
-            "num_beams": 1081,
-            "max_range": 30.0,
-            "fov": 2.3499999046325684 * 2,
-        },
     )
 
 
@@ -63,29 +58,30 @@ def run_environment(
     env.enable_beam_rendering()
     env.render()
 
-    with RuntimeVisualizer() as rv:
-        t = 0
-        while True:
-            if t > max_timesteps:
-                break
-            t += 1
+    t = 0
+    while True:
+        if t > max_timesteps:
+            break
+        t += 1
 
-            action = agent.take_action(obs, info, deterministic=deterministic)
-            obs, step_reward, terminated, truncated, info = env.step(action)
+        action = agent.take_action(obs, info, deterministic=deterministic)
+        obs, step_reward, terminated, truncated, info = env.step(action)
 
-            rv.add_data(action, obs, step_reward)
-            env.render(mode=render_mode)
+        # rv.add_data(action, obs, step_reward)
+        env.render(mode=render_mode)
 
-            if verbose:
-                print(f"--- t = {t:03} {'-' * 16}")
-                print("Action", action)
-                print("Velocity X", obs["linear_vel_x"])
-                print("Velocity Y", obs["linear_vel_y"])
-                print("Angular Velocity Z", obs["angular_vel_z"])
-                print("Reward", step_reward)
+        if verbose:
+            print(f"--- t = {t:03} {'-' * 16}")
+            print("Action", action)
+            print("Velocity X", obs["linear_vel_x"])
+            print("Velocity Y", obs["linear_vel_y"])
+            print("Angular Velocity Z", obs["angular_vel_z"])
+            print("Reward", step_reward)
 
-            if terminated or truncated:
-                break
+        if terminated or truncated:
+            break
+
+    # with RuntimeVisualizer() as rv:
 
 
 def evaluate(env: F110_SB_Env, agent: Agent, n_eval_episodes=10):

@@ -12,6 +12,7 @@ if typing.TYPE_CHECKING:
 
 
 class F110_SB_Env(gymnasium.Env):
+    TIMESTEP = 0.01
     DEFAULT_NUM_BEAMS = 1080
     DEFAULT_FOV = 4.7
     DEFAULT_MAX_RANGE = 30.0
@@ -41,14 +42,14 @@ class F110_SB_Env(gymnasium.Env):
         reward_params: typing.Dict = {},
         record=False,
     ):
-        assert (
-            len(reset_poses) == len(other_agents) + 1
-        ), f"{len(reset_poses)} reset pose(s) given but there are {len(other_agents) + 1} agent(s)"
+        assert len(reset_poses) == len(other_agents) + 1, (
+            f"{len(reset_poses)} reset pose(s) given but there are {len(other_agents) + 1} agent(s)"
+        )
 
-        self.map = map
-        self.map_ext = map_ext
-        self.reset_poses = reset_poses
-        self.other_agents = other_agents
+        self._map = map
+        self._map_ext = map_ext
+        self._reset_poses = reset_poses
+        self._other_agents = other_agents
         self.record = record
 
         self._num_agents = 1 + len(other_agents)
@@ -110,6 +111,20 @@ class F110_SB_Env(gymnasium.Env):
         self._initialize_f110_gym()
         self._epochs = 0
 
+    def change_map(
+        self,
+        map: str,
+        map_ext: str,
+        reset_poses: typing.List[typing.Tuple[float, float, float]],
+        other_agents: typing.List["Agent"],
+    ):
+        self._map = map
+        self._map_ext = map_ext
+        self._reset_poses = reset_poses
+        self._other_agents = other_agents
+
+        self._initialize_f110_gym()
+
     def _define_action_space(self):
         # action: (steer, speed)
         s_min_normalized = self._s_min / self._s_normalization_factor
@@ -149,19 +164,19 @@ class F110_SB_Env(gymnasium.Env):
         )
 
     def _initialize_f110_gym(self):
-        self.env = gym.make(
+        self._env = gym.make(
             "f110_gym:f110-v0",
-            map=self.map,
-            map_ext=self.map_ext,
+            map=self._map,
+            map_ext=self._map_ext,
             num_agents=self._num_agents,
             ego_idx=self.EGO_IDX,
             lidar_params=self._lidar_params,
             params=self._params,
-            timestep=0.01,
+            timestep=self.TIMESTEP,
             # integrator=Integrator.RK4,
             integrator=Integrator.Euler,
         )
-        self.env.add_render_callback(self._render_callback)
+        self._env.add_render_callback(self._render_callback)
 
     def _render_callback(self, env_renderer):
         # Adding LIDAR beam lines on first run
@@ -375,9 +390,9 @@ class F110_SB_Env(gymnasium.Env):
             - others?
         """
         if info["checkpoint_done"][idx]:
-            reward = +1000
+            reward = +100
         elif obs["collisions"][idx] == 1.0:
-            reward = -1000
+            reward = -100
         elif self._check_truncated():
             reward = -50
         else:
@@ -398,24 +413,17 @@ class F110_SB_Env(gymnasium.Env):
             ang_vel_del_norm = abs(angular_velocity_delta) / (2 * self._sv_max)
             steer_norm = action[0]
 
-            r_vel = vel_norm
-            # r_dist = dist_norm * 3
-            # r_dist = -5 if distance_to_boundary < 0.3 else 0
-            if distance_to_boundary < 0.2:
-                r_dist = -5
-            elif distance_to_boundary < 0.5:
-                r_dist = -2
-            else:
-                r_dist = +1
+            r_vel = 10 * vel_norm
+            r_vel = 1 if vel_norm > 0.1 else 0
+            r_dist = dist_norm * 3
+            r_dist = -5 if distance_to_boundary < 0.3 else 0
             r_a_vel = ang_vel_norm
             r_a_vel_delta = 1 - min(1, ang_vel_del_norm)
             r_steer = 1 - abs(steer_norm)
 
             # reward = 0.2 * r_vel + 0.8 * r_dist + 0.0 * r_a_vel + 0.0 * r_a_vel_delta
 
-            r_vel = 1 if vel_norm > 0.2 else 0
-
-            reward = r_vel + 0.0 * r_steer + r_dist
+            reward = r_vel
 
         return reward
 
@@ -440,7 +448,7 @@ class F110_SB_Env(gymnasium.Env):
         self._epochs = 0
         self._previous_poses = deque(maxlen=self.MAX_STILL_STEPS)
 
-        obs, reward, _, info = self.env.reset(np.array(self.reset_poses))
+        obs, reward, _, info = self._env.reset(np.array(self._reset_poses))
         self._previous_obs = obs
         self._previous_info = info
         self._previous_actions = None
@@ -467,7 +475,7 @@ class F110_SB_Env(gymnasium.Env):
 
     def _get_actions(self, ego_action):
         all_actions = [ego_action]
-        for i, agent in enumerate(self.other_agents):
+        for i, agent in enumerate(self._other_agents):
             current_transformed_obs, current_transformed_info = (
                 self._transform_obs_and_info_for_sb(
                     self._previous_obs, self._previous_info, i
@@ -509,7 +517,7 @@ class F110_SB_Env(gymnasium.Env):
         self._epochs += 1
 
         actions = self._get_actions(action)
-        obs, step_reward, done, info = self.env.step(actions)
+        obs, step_reward, done, info = self._env.step(actions)
         truncated = self._check_truncated()
 
         transformed_obs, transformed_info = self._transform_obs_and_info_for_sb(
@@ -547,9 +555,9 @@ class F110_SB_Env(gymnasium.Env):
 
     def render(self, mode: typing.Optional[str] = None):
         if mode is None:
-            self.env.render()
+            self._env.render()
         else:
-            self.env.render(mode)
+            self._env.render(mode)
 
     def get_recording(self):
         assert self.record, "Env not configured to record actions"

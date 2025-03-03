@@ -6,7 +6,18 @@ from src.ppo_agent import PPOAgent
 from src.playback_agent import PlaybackAgent
 from src.raceline_follow_agent import RacelineFollowAgent
 from src.ppo_agent_optuna import run_ppo_agent_study, display_study_results
-from src.utils import *
+from src.f110_sb_env import F110_SB_Env
+from src.sticky_action_wrapper import StickyActionWrapper
+from src.multi_map_wrapper import MultiMapWrapper
+from src.utils import (
+    load_map_config,
+    build_env,
+    run_environment,
+    save_recording,
+    get_date_tag,
+    load_latest_model,
+)
+from src.map_generators import roemerlager_map_generator
 
 
 def run_dummy_agent(env: F110_SB_Env):
@@ -14,7 +25,7 @@ def run_dummy_agent(env: F110_SB_Env):
     run_environment(env, dummy_agent, verbose=False)
 
 
-def train_ppo_agent(env: F110_SB_Env):
+def train_ppo_agent(env: F110_SB_Env, total_timesteps=10000):
     try:
         # Hyper paramters from Optuna study
         ppo_agent = PPOAgent.create(
@@ -29,7 +40,7 @@ def train_ppo_agent(env: F110_SB_Env):
         # ppo_agent = PPOAgent.create_from_saved_model(
         #     "", env=env
         # )
-        ppo_agent.learn(total_timesteps=100000)
+        ppo_agent.learn(total_timesteps=total_timesteps)
         ppo_agent.save_model(f"./models/ppo_agent_{get_date_tag()}")
         run_environment(env, ppo_agent, deterministic=True, verbose=False)
     except SBAgentLearningException as e:
@@ -43,10 +54,11 @@ def train_ppo_agent(env: F110_SB_Env):
             )
 
 
-def run_ppo_agent(env: F110_SB_Env, model_path: str):
-    ppo_agent = PPOAgent.create_from_saved_model(model_path)
-    env.enable_recording()
-    run_environment(env, ppo_agent, deterministic=True, verbose=False)
+def run_ppo_agent(env: F110_SB_Env, model_path: str, runs=1):
+    for _ in range(runs):
+        ppo_agent = PPOAgent.create_from_saved_model(model_path)
+        env.enable_recording()
+        run_environment(env, ppo_agent, deterministic=True, verbose=False)
 
 
 def run_playback_agent(env: F110_SB_Env, save_file: str):
@@ -75,23 +87,34 @@ def run_raceline_follow_agent(env: F110_SB_Env, map_path: str):
 
 
 def main():
+    train = 0
+
     # config = load_map_config("example")
     config = load_map_config("roemerlager")
     env = build_env(
         config,
         # other_agents=[DummyAgent(0, 0) for _ in range(len(config.starting_poses) - 1)],
         other_agents=[],
-        enable_recording=False,
+        enable_recording=True,
+        lidar_params={
+            "num_beams": 1081,
+            "max_range": 30.0,
+            "fov": 2.3499999046325684 * 2,
+        },
     )
+    env = StickyActionWrapper(env=env, tick_rate=0.1, fine_rendering=not train)
+    env = MultiMapWrapper(env=env, map_generator=roemerlager_map_generator)
+
     # check_env(env, warn=False)
 
     # run_dummy_agent(env)
 
-    # train_ppo_agent(env)
-
-    model_filepath = load_latest_model(index_from_end=3)
-    print(f"Loading model: {model_filepath}")
-    run_ppo_agent(env, model_filepath)
+    if train:
+        train_ppo_agent(env, total_timesteps=40000)
+    else:
+        model_filepath = load_latest_model(index_from_end=0)
+        print(f"Loading model: {model_filepath}")
+        run_ppo_agent(env, model_filepath, runs=5)
 
     # run_ppo_agent_study()
     # display_study_results()
