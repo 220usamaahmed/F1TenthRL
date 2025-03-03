@@ -14,9 +14,11 @@ if typing.TYPE_CHECKING:
 class F110_SB_Env(gymnasium.Env):
     DEFAULT_NUM_BEAMS = 1080
     DEFAULT_FOV = 4.7
-    DEFAULT_MAX_RANGE = 10.0
-    DEFAULT_SV_MIN = -3.2
-    DEFAULT_SV_MAX = 3.2
+    DEFAULT_MAX_RANGE = 30.0
+    # DEFAULT_SV_MIN = -3.2
+    # DEFAULT_SV_MAX = 3.2
+    DEFAULT_SV_MIN = -2.0
+    DEFAULT_SV_MAX = +2.0
     DEFAULT_S_MIN = -0.4189
     DEFAULT_S_MAX = 0.4189
     DEFAULT_V_MIN = -5
@@ -53,6 +55,7 @@ class F110_SB_Env(gymnasium.Env):
 
         self._beam_rendering_enabled = False
         self._beam_gl_lines = []
+        self._direction_gl_line = None
 
         self._recorded_actions = []
         self._recorded_rewards = []
@@ -86,6 +89,9 @@ class F110_SB_Env(gymnasium.Env):
             "s_max": self._s_max,
             "v_min": self._v_min,
             "v_max": self._v_max,
+            "width": 0.30,
+            "length": 0.51,
+            # "mu": 1.0489 / 1.2,
         }
 
         self._reward_parms = reward_params
@@ -170,6 +176,16 @@ class F110_SB_Env(gymnasium.Env):
                 )
                 self._beam_gl_lines.append(gl_line)
 
+        # Add direction line
+        if not self._direction_gl_line:
+            self._direction_gl_line = env_renderer.batch.add(
+                2,
+                GL_LINES,
+                None,
+                ("v2f/stream", (0, 0, 0, 0)),
+                ("c3B/stream", (255, 255, 255, 0, 255, 0)),
+            )
+
         # Updating camera position
         car_vertices = env_renderer.cars[self.EGO_IDX].vertices
         x = np.mean(car_vertices[::2])
@@ -193,6 +209,24 @@ class F110_SB_Env(gymnasium.Env):
 
             # TODO: Find out why this is working with 50
             gl_line.vertices = [car_x * 50, car_y * 50, end_x * 50, end_y * 50]
+
+        pos_x_0 = self._previous_obs["poses_x"][self.EGO_IDX]
+        pos_y_0 = self._previous_obs["poses_y"][self.EGO_IDX]
+        pos_x_1 = obs["poses_x"][self.EGO_IDX]
+        pos_y_1 = obs["poses_y"][self.EGO_IDX]
+
+        theta = np.arctan2(pos_y_1 - pos_y_0, pos_x_1 - pos_x_0)
+        mag = (pos_y_0 - pos_y_1) ** 2 + (pos_x_0 - pos_x_1) ** 2
+
+        dx = 50 * np.cos(theta)
+        dy = 50 * np.sin(theta)
+
+        self._direction_gl_line.vertices = [
+            car_x * 50,
+            car_y * 50,
+            (car_x * 50) + dx,
+            (car_y * 50) + dy,
+        ]
 
     def _transform_obs_and_info_for_sb(
         self, obs, info, idx=EGO_IDX
@@ -269,14 +303,14 @@ class F110_SB_Env(gymnasium.Env):
         distance_to_boundary = np.min(obs["scans"][idx])
 
         if info["checkpoint_done"][idx]:
-            reward = +1
+            reward = +100
         elif obs["collisions"][idx] == 1.0:
-            reward = -1
+            reward = -100
         else:
             velocity = obs["linear_vels_x"][idx]
             r_vel = velocity / self._v_max
             r_dist = distance_to_boundary / self._max_range
-            reward = 0.2 * r_vel + 0.8 * r_dist
+            reward = 0.5 * r_vel + 2 * r_dist
 
         return reward
 
@@ -349,6 +383,7 @@ class F110_SB_Env(gymnasium.Env):
         else:
             distance_to_boundary = np.min(obs["scans"][idx])
             velocity = obs["linear_vels_x"][idx]
+
             angular_velocity = obs["ang_vels_z"][idx]
             previous_angular_velocity = (
                 0
@@ -364,14 +399,21 @@ class F110_SB_Env(gymnasium.Env):
             steer_norm = action[0]
 
             r_vel = vel_norm
-            r_dist = -5 if distance_to_boundary < 0.5 else 0
+            # r_dist = dist_norm * 3
+            # r_dist = -5 if distance_to_boundary < 0.3 else 0
+            if distance_to_boundary < 0.2:
+                r_dist = -5
+            elif distance_to_boundary < 0.5:
+                r_dist = -2
+            else:
+                r_dist = +1
             r_a_vel = ang_vel_norm
             r_a_vel_delta = 1 - min(1, ang_vel_del_norm)
             r_steer = 1 - abs(steer_norm)
 
             # reward = 0.2 * r_vel + 0.8 * r_dist + 0.0 * r_a_vel + 0.0 * r_a_vel_delta
 
-            r_vel = 1 if vel_norm > 0.1 else 0
+            r_vel = 1 if vel_norm > 0.2 else 0
 
             reward = r_vel + 0.0 * r_steer + r_dist
 

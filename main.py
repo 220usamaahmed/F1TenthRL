@@ -46,7 +46,7 @@ def train_ppo_agent(env: F110_SB_Env):
 def run_ppo_agent(env: F110_SB_Env, model_path: str):
     ppo_agent = PPOAgent.create_from_saved_model(model_path)
     env.enable_recording()
-    run_environment(env, ppo_agent, deterministic=True, verbose=True)
+    run_environment(env, ppo_agent, deterministic=True, verbose=False)
 
 
 def run_playback_agent(env: F110_SB_Env, save_file: str):
@@ -87,11 +87,11 @@ def main():
 
     # run_dummy_agent(env)
 
-    train_ppo_agent(env)
+    # train_ppo_agent(env)
 
-    # model_filepath = load_latest_model(index_from_end=1)
-    # print(f"Loading model: {model_filepath}")
-    # run_ppo_agent(env, model_filepath)
+    model_filepath = load_latest_model(index_from_end=3)
+    print(f"Loading model: {model_filepath}")
+    run_ppo_agent(env, model_filepath)
 
     # run_ppo_agent_study()
     # display_study_results()
