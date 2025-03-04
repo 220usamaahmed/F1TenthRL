@@ -65,7 +65,7 @@ class F110_SB_Env(gymnasium.Env):
 
         self._previous_obs = None
         self._previous_info = None
-        self._previous_actions = None
+        self._previous_action = None
 
         self._previous_poses = deque(maxlen=self.MAX_STILL_STEPS)
         self._num_beams = lidar_params.get("num_beams", F110_SB_Env.DEFAULT_NUM_BEAMS)
@@ -134,15 +134,12 @@ class F110_SB_Env(gymnasium.Env):
         v_max_normalized = self._v_max / self._v_normalization_factor
 
         return Box(
-            low=np.array([s_min_normalized, v_min_normalized]),
-            high=np.array([s_max_normalized, v_max_normalized]),
+            low=np.array([s_min_normalized, v_min_normalized, 0]),
+            high=np.array([s_max_normalized, v_max_normalized, 1]),
             dtype=np.float32,
         )
 
     def _define_observation_space(self):
-        # TODO: Is the v_min and v_max really refering to linear velocities in x, y components?
-        # TODO: Should the pose x, y, theta also be included in observations?
-
         return Dict(
             {
                 "scan": Box(
@@ -279,101 +276,12 @@ class F110_SB_Env(gymnasium.Env):
         self._recorded_observations = []
         self._recorded_info = []
 
-    def _shape_reward(self, action, env_reward, obs, info, idx=EGO_IDX) -> float:
-        return self._r6(action, obs, info, idx)
+    def _shape_reward(
+        self, action, conserved, env_reward, obs, info, idx=EGO_IDX
+    ) -> float:
+        return self._r6(action, conserved, obs, info, idx)
 
-    def _r1(self, action, obs, info, idx):
-        reward = 0
-
-        if info["checkpoint_done"][idx]:
-            reward = +50
-        elif obs["collisions"][idx] == 1.0:
-            reward = -200
-        elif self._check_truncated():
-            reward = -50
-        else:
-            velocity = obs["linear_vels_x"][idx]
-            steer = action[0]
-            reward = 1 if velocity > 0.1 else -1
-            reward -= 0.1 * abs(steer)
-
-        return reward
-
-    def _r2(self, action, obs, info, idx):
-        reward = 0
-
-        if info["checkpoint_done"][idx]:
-            reward = +1
-        elif obs["collisions"][idx] == 1.0:
-            reward = -1
-        else:
-            velocity = obs["linear_vels_x"][idx]
-            reward = (1 / self._v_max) * velocity
-            angular_velocity = obs["ang_vels_z"][idx]
-            reward += 0.1 * velocity - 0.1 * angular_velocity
-
-        return reward
-
-    def _r3(self, action, obs, info, idx):
-        distance_to_boundary = np.min(obs["scans"][idx])
-
-        if info["checkpoint_done"][idx]:
-            reward = +100
-        elif obs["collisions"][idx] == 1.0:
-            reward = -100
-        else:
-            velocity = obs["linear_vels_x"][idx]
-            r_vel = velocity / self._v_max
-            r_dist = distance_to_boundary / self._max_range
-            reward = 0.5 * r_vel + 2 * r_dist
-
-        return reward
-
-    def _r4(self, action, obs, info, idx):
-        distance_to_boundary = np.min(obs["scans"][idx])
-
-        if info["checkpoint_done"][idx]:
-            reward = +1
-        elif obs["collisions"][idx] == 1.0:
-            reward = -1
-        else:
-            velocity = obs["linear_vels_x"][idx]
-            angular_velocity = obs["ang_vels_z"][idx]
-
-            r_vel = velocity / self._v_max
-            r_dist = distance_to_boundary / self._max_range
-            r_a_vel = 1 - min(1, abs(angular_velocity) / self._sv_max)
-
-            reward = 0.1 * r_vel + 0.85 * r_dist + 0.05 * r_a_vel
-
-        return reward
-
-    def _r5(self, action, obs, info, idx):
-        distance_to_boundary = np.min(obs["scans"][idx])
-
-        if info["checkpoint_done"][idx]:
-            reward = +1
-        elif obs["collisions"][idx] == 1.0:
-            reward = -1
-        else:
-            velocity = obs["linear_vels_x"][idx]
-            angular_velocity = obs["ang_vels_z"][idx]
-            previous_angular_velocity = (
-                0
-                if self._previous_obs is None
-                else self._previous_obs["ang_vels_z"][idx]
-            )
-            angular_velocity_delta = angular_velocity - previous_angular_velocity
-
-            r_vel = velocity / self._v_max
-            r_dist = distance_to_boundary / self._max_range
-            r_a_vel = 1 - min(1, abs(angular_velocity_delta) / (2 * self._sv_max))
-
-            reward = 0.1 * r_vel + 0.85 * r_dist + 0.05 * r_a_vel
-
-        return reward
-
-    def _r6(self, action, obs, info, idx):
+    def _r6(self, action, conserved, obs, info, idx):
         # TODO: Use the reward params
 
         """
@@ -413,17 +321,19 @@ class F110_SB_Env(gymnasium.Env):
             ang_vel_del_norm = abs(angular_velocity_delta) / (2 * self._sv_max)
             steer_norm = action[0]
 
-            r_vel = 10 * vel_norm
-            r_vel = 1 if vel_norm > 0.1 else 0
+            r_vel = vel_norm
+            # r_vel = 1 if vel_norm > 0.1 else 0
             r_dist = dist_norm * 3
             r_dist = -5 if distance_to_boundary < 0.3 else 0
             r_a_vel = ang_vel_norm
             r_a_vel_delta = 1 - min(1, ang_vel_del_norm)
             r_steer = 1 - abs(steer_norm)
+            # r_conserve = 0 if conserved else -0.1
+            r_conserve = 0
 
             # reward = 0.2 * r_vel + 0.8 * r_dist + 0.0 * r_a_vel + 0.0 * r_a_vel_delta
 
-            reward = r_vel
+            reward = r_vel + r_conserve
 
         return reward
 
@@ -459,7 +369,7 @@ class F110_SB_Env(gymnasium.Env):
         obs, reward, _, info = self._env.reset(np.array(self._reset_poses))
         self._previous_obs = obs
         self._previous_info = info
-        self._previous_actions = None
+        self._previous_action = None
 
         self._previous_poses.append(
             (
@@ -471,7 +381,7 @@ class F110_SB_Env(gymnasium.Env):
         transformed_obs, transformed_info = self._transform_obs_and_info_for_sb(
             obs, info
         )
-        shaped_reward = self._shape_reward([0, 0], reward, obs, info)
+        shaped_reward = self._shape_reward([0, 0], False, reward, obs, info)
 
         if self.record:
             self._reset_recording()
@@ -482,7 +392,27 @@ class F110_SB_Env(gymnasium.Env):
         return transformed_obs, transformed_info
 
     def _get_actions(self, ego_action):
-        all_actions = [ego_action]
+        ego_action_sb = ego_action[0:2]
+        # action_conserved = ego_action[2] < 0.5
+        action_conserved = False
+
+        # Dampen actions
+        if self._previous_action is None:
+            damped_action = ego_action_sb
+            action_conserved = True
+        else:
+            if action_conserved:
+                damped_action = self._previous_action
+            else:
+                damped_action = (
+                    ego_action_sb * self.ACTION_DAMPING_FACTORS
+                    + self._previous_action * (1 - self.ACTION_DAMPING_FACTORS)
+                )
+        self._previous_action = damped_action
+
+        # Get other agents actions
+        # TODO: This assumes EGO = 0?
+        all_actions = [self._previous_action]
         for i, agent in enumerate(self._other_agents):
             current_transformed_obs, current_transformed_info = (
                 self._transform_obs_and_info_for_sb(
@@ -494,18 +424,10 @@ class F110_SB_Env(gymnasium.Env):
             )
         all_actions = np.array(all_actions)
 
-        if self._previous_actions is None:
-            damped_actions = all_actions
-        else:
-            damped_actions = (
-                self._previous_actions * F110_SB_Env.ACTION_DAMPING_FACTORS
-                + all_actions * (1 - F110_SB_Env.ACTION_DAMPING_FACTORS)
-            )
-        self._previous_actions = damped_actions
+        # Scale actions
+        scalled_actions = self._action_scale_factors * all_actions
 
-        scalled_actions = self._action_scale_factors * damped_actions
-
-        return scalled_actions
+        return scalled_actions, action_conserved
 
     def _check_if_still(self):
         if len(self._previous_poses) < self.MAX_STILL_STEPS:
@@ -524,14 +446,14 @@ class F110_SB_Env(gymnasium.Env):
     def step(self, action):
         self._epochs += 1
 
-        actions = self._get_actions(action)
+        actions, conserved = self._get_actions(action)
         obs, step_reward, done, info = self._env.step(actions)
         truncated = self._check_truncated()
 
         transformed_obs, transformed_info = self._transform_obs_and_info_for_sb(
             obs, info
         )
-        shaped_reward = self._shape_reward(action, step_reward, obs, info)
+        shaped_reward = self._shape_reward(action, conserved, step_reward, obs, info)
         terminated = done or obs["collisions"][self.EGO_IDX] == 1.0
 
         if self.record:

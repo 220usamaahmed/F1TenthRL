@@ -88,6 +88,7 @@ def run_raceline_follow_agent(env: F110_SB_Env, map_path: str):
 
 def main():
     train = 0
+    runs = 1
 
     # config = load_map_config("example")
     config = load_map_config("roemerlager")
@@ -103,18 +104,18 @@ def main():
         },
     )
     env = StickyActionWrapper(env=env, tick_rate=0.1, fine_rendering=not train)
-    env = MultiMapWrapper(env=env, map_generator=roemerlager_map_generator)
+    # env = MultiMapWrapper(env=env, map_generator=roemerlager_map_generator)
 
     # check_env(env, warn=False)
 
     # run_dummy_agent(env)
 
     if train:
-        train_ppo_agent(env, total_timesteps=40000)
+        train_ppo_agent(env, total_timesteps=100000)
     else:
         model_filepath = load_latest_model(index_from_end=0)
         print(f"Loading model: {model_filepath}")
-        run_ppo_agent(env, model_filepath, runs=5)
+        run_ppo_agent(env, model_filepath, runs=runs)
 
     # run_ppo_agent_study()
     # display_study_results()
