@@ -1,4 +1,5 @@
 from stable_baselines3.common.env_checker import check_env
+from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 import pandas as pd
 from src.agent import SBAgentLearningException
 from src.dummy_agent import DummyAgent
@@ -103,6 +104,8 @@ def main():
             "fov": 2.3499999046325684 * 2,
         },
     )
+    # env = DummyVecEnv([lambda: env])
+    # env = VecNormalize(env, norm_obs=True)
     env = StickyActionWrapper(env=env, tick_rate=0.1, fine_rendering=not train)
     env = MultiMapWrapper(env=env, map_generator=roemerlager_map_generator)
 
@@ -111,7 +114,7 @@ def main():
     # run_dummy_agent(env)
 
     if train:
-        train_ppo_agent(env, total_timesteps=40000)
+        train_ppo_agent(env, total_timesteps=100000)
     else:
         model_filepath = load_latest_model(index_from_end=0)
         print(f"Loading model: {model_filepath}")
