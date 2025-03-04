@@ -13,10 +13,8 @@ if typing.TYPE_CHECKING:
 
 class F110_SB_Env(gymnasium.Env):
     TIMESTEP = 0.01
-    # DEFAULT_NUM_BEAMS = 1081
-    # DEFAULT_MAX_RANGE = 30.0
-    DEFAULT_NUM_BEAMS = 135
-    DEFAULT_MAX_RANGE = 5.0
+    DEFAULT_NUM_BEAMS = 1081
+    DEFAULT_MAX_RANGE = 30.0
     DEFAULT_FOV = 2.3499999046325684 * 2
     DEFAULT_SV_MIN = -3.2
     DEFAULT_SV_MAX = 3.2
@@ -134,8 +132,8 @@ class F110_SB_Env(gymnasium.Env):
         # v_max_normalized = self._v_max / self._v_normalization_factor
 
         return Box(
-            low=np.array([0, 0]),
-            high=np.array([+1, +1]),
+            low=np.array([0, 0, 0]),
+            high=np.array([1, 1, 1]),
             dtype=np.float32,
         )
 
@@ -278,21 +276,28 @@ class F110_SB_Env(gymnasium.Env):
         self._recorded_observations = []
         self._recorded_info = []
 
-    def _shape_reward(self, action, env_reward, obs, info, idx=EGO_IDX) -> float:
+    def _shape_reward(
+        self, action, conserved, env_reward, obs, info, idx=EGO_IDX
+    ) -> float:
         if info["checkpoint_done"][idx]:
             reward = +100
         elif obs["collisions"][idx] == 1.0:
             reward = -100
         else:
             # reward = 0
-            distance_to_boundary = np.min(obs["scans"][idx])
-            r_dist = -1 if distance_to_boundary < 0.5 else 1
+            # distance_to_boundary = np.min(obs["scans"][idx])
+            # r_dist = -1 if distance_to_boundary < 0.5 else 1
 
-            velocity = obs["linear_vels_x"][idx]
-            vel_norm = velocity / self._v_max
-            r_vel = vel_norm
+            # velocity = obs["linear_vels_x"][idx]
+            # vel_norm = velocity / self._v_max
+            # r_vel = vel_norm
 
-            reward = r_vel + r_dist
+            # reward = r_vel + r_dist
+
+            if conserved:
+                reward = 1
+            else:
+                reward = 0
 
         return reward
 
@@ -395,7 +400,7 @@ class F110_SB_Env(gymnasium.Env):
         transformed_obs, transformed_info = self._transform_obs_and_info_for_sb(
             obs, info
         )
-        shaped_reward = self._shape_reward([0.0, 0.0], reward, obs, info)
+        shaped_reward = self._shape_reward([0.0, 0.0, 0.0], False, reward, obs, info)
 
         if self.record:
             self._reset_recording()
@@ -420,20 +425,20 @@ class F110_SB_Env(gymnasium.Env):
 
         steering_angle = ego_action[0]
         speed = ego_action[1]
+        conserved = ego_action[2] > 0.5
+
+        if self._previous_actions is not None and conserved:
+            return self._previous_actions, True
 
         scaled_steering_angle = _map_value(
             steering_angle, (0, +1), (self._s_min, self._s_max)
         )
         scaled_speed = _map_value(speed, (0, +1), (self._v_min, self._v_max))
 
-        # print("model_output", ego_action)
-        # print("scaled_action", [scaled_steering_angle, scaled_speed])
-        # print()
-
         all_actions = np.array([[scaled_steering_angle, scaled_speed]])
         self._previous_actions = all_actions
 
-        return all_actions
+        return all_actions, False
 
         # all_actions = [ego_action]
         # for i, agent in enumerate(self._other_agents):
@@ -477,7 +482,12 @@ class F110_SB_Env(gymnasium.Env):
     def step(self, action):
         self._epochs += 1
 
-        actions = self._get_actions(action)
+        actions, conserved = self._get_actions(action)
+
+        print("model_output", action)
+        print("conserved", conserved)
+        print("scaled_action", actions)
+        print()
 
         obs, step_reward, done, info = self._env.step(actions)
         truncated = self._check_truncated()
@@ -485,7 +495,7 @@ class F110_SB_Env(gymnasium.Env):
         transformed_obs, transformed_info = self._transform_obs_and_info_for_sb(
             obs, info
         )
-        shaped_reward = self._shape_reward(action, step_reward, obs, info)
+        shaped_reward = self._shape_reward(action, conserved, step_reward, obs, info)
         terminated = done or obs["collisions"][self.EGO_IDX] == 1.0
 
         if self.record:

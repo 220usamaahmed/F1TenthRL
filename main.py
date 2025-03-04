@@ -100,7 +100,7 @@ def main():
     )
     # env = DummyVecEnv([lambda: env])
     # env = VecNormalize(env, norm_obs=True)
-    env = StickyActionWrapper(env=env, tick_rate=0.1, fine_rendering=not train)
+    # env = StickyActionWrapper(env=env, tick_rate=0.1, fine_rendering=not train)
     # env = MultiMapWrapper(env=env, map_generator=roemerlager_map_generator)
 
     # check_env(env, warn=False)

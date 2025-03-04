@@ -27,7 +27,7 @@ class PPOAgent(SBAgent):
     ) -> SBAgent:
         policy_kwargs = {
             "features_extractor_class": CustomCombinedExtractor,
-            "features_extractor_kwargs": {"features_dim": 64},
+            "features_extractor_kwargs": {"features_dim": 256},
             "net_arch": net_arch,
         }
 
