@@ -57,7 +57,7 @@ def train_ppo_agent(env: F110_SB_Env, total_timesteps=10000):
 def run_ppo_agent(env: F110_SB_Env, model_path: str, runs=1):
     for _ in range(runs):
         ppo_agent = PPOAgent.create_from_saved_model(model_path)
-        env.enable_recording()
+        # env.enable_recording()
         run_environment(env, ppo_agent, deterministic=True, verbose=False)
 
 
@@ -87,7 +87,7 @@ def run_raceline_follow_agent(env: F110_SB_Env, map_path: str):
 
 
 def main():
-    train = 0
+    train = 1
     runs = 1
 
     # config = load_map_config("example")
@@ -103,7 +103,7 @@ def main():
             "fov": 2.3499999046325684 * 2,
         },
     )
-    env = StickyActionWrapper(env=env, tick_rate=0.1, fine_rendering=not train)
+    # env = StickyActionWrapper(env=env, tick_rate=0.1, fine_rendering=not train)
     # env = MultiMapWrapper(env=env, map_generator=roemerlager_map_generator)
 
     # check_env(env, warn=False)

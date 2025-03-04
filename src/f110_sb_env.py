@@ -25,7 +25,7 @@ class F110_SB_Env(gymnasium.Env):
     DEFAULT_V_MIN = -5
     DEFAULT_V_MAX = 10
     # ACTION_DAMPING_FACTORS = np.array([0.5, 0.5])
-    ACTION_DAMPING_FACTORS = np.array([0.0, 0.0])
+    ACTION_DAMPING_FACTORS = np.array([1.0, 1.0])
     EGO_IDX = 0
     MAX_EPOCHS = 6000
     MAX_STILL_STEPS = 100
@@ -300,9 +300,9 @@ class F110_SB_Env(gymnasium.Env):
         if info["checkpoint_done"][idx]:
             reward = +100
         elif obs["collisions"][idx] == 1.0:
-            reward = -100
+            reward = -1000
         elif self._check_truncated():
-            reward = -50
+            reward = -100
         else:
             distance_to_boundary = np.min(obs["scans"][idx])
             velocity = obs["linear_vels_x"][idx]
@@ -328,7 +328,7 @@ class F110_SB_Env(gymnasium.Env):
             r_a_vel = ang_vel_norm
             r_a_vel_delta = 1 - min(1, ang_vel_del_norm)
             r_steer = 1 - abs(steer_norm)
-            # r_conserve = 0 if conserved else -0.1
+            # r_conserve = 0 if conserved else -0.01
             r_conserve = 0
 
             # reward = 0.2 * r_vel + 0.8 * r_dist + 0.0 * r_a_vel + 0.0 * r_a_vel_delta
@@ -393,8 +393,7 @@ class F110_SB_Env(gymnasium.Env):
 
     def _get_actions(self, ego_action):
         ego_action_sb = ego_action[0:2]
-        # action_conserved = ego_action[2] < 0.5
-        action_conserved = False
+        action_conserved = ego_action[2] < 0.5
 
         # Dampen actions
         if self._previous_action is None:
