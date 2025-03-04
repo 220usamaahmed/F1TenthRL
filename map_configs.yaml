@@ -12,6 +12,14 @@ example:
   # starting_poses: [[0, 0, 1.57]]
   max_timesteps: 1000
 
+reference:
+  map_path: './maps/reference/reference'
+  map_ext: '.png'
+  starting_poses: [[-5.35, -0.75, 0.0]]
+  max_timesteps: 1000
+
+# -- Maps from Roemerlager
+
 roemerlager:
   map_path: './maps/roemerlager/original'
   map_ext: '.png'

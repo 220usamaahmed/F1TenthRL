@@ -29,9 +29,9 @@ def build_env(
     enable_recording=False,
 ) -> F110_SB_Env:
     starting_poses = config.starting_poses
-    assert len(starting_poses) >= len(other_agents) + 1, (
-        "This env doesn't have enough starting poses specified"
-    )
+    assert (
+        len(starting_poses) >= len(other_agents) + 1
+    ), "This env doesn't have enough starting poses specified"
     starting_poses = starting_poses[: len(other_agents) + 1]
 
     return F110_SB_Env(

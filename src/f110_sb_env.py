@@ -578,6 +578,9 @@ class F110_SB_Env(gymnasium.Env):
         self._epochs += 1
 
         actions = self._get_actions(action)
+
+        print(actions)
+
         obs, step_reward, done, info = self._env.step(actions)
         truncated = self._check_truncated()
 
