@@ -286,13 +286,18 @@ class F110_SB_Env(gymnasium.Env):
         else:
             # reward = 0
             distance_to_boundary = np.min(obs["scans"][idx])
-            r_dist = -1 if distance_to_boundary < 0.5 else 1
+            r_dist = -1 if distance_to_boundary < 0.3 else 1
 
-            velocity = obs["linear_vels_x"][idx]
-            vel_norm = velocity / self._v_max
-            r_vel = vel_norm
+            # velocity = obs["linear_vels_x"][idx]
+            # vel_norm = velocity / self._v_max
+            # r_vel = vel_norm
 
-            reward = r_vel + r_dist
+            r_vel = action[1]
+
+            steer = abs(self._map_value(action[0], (0, 1), (-1, 1)))
+            r_steer = -2 * steer
+
+            reward = r_vel + r_dist + r_steer
 
         return reward
 
@@ -405,14 +410,13 @@ class F110_SB_Env(gymnasium.Env):
 
         return transformed_obs, transformed_info
 
+    def _map_value(self, value, current_range, desired_range):
+        """Maps a value from its current range to a desired range."""
+        cur_min, cur_max = current_range
+        des_min, des_max = desired_range
+        return des_min + (value - cur_min) * (des_max - des_min) / (cur_max - cur_min)
+
     def _get_actions(self, ego_action):
-        def _map_value(value, current_range, desired_range):
-            """Maps a value from its current range to a desired range."""
-            cur_min, cur_max = current_range
-            des_min, des_max = desired_range
-            return des_min + (value - cur_min) * (des_max - des_min) / (
-                cur_max - cur_min
-            )
 
         # TODO: Ignoring all other agents for now
         # TODO: Ignoring dampning for now
@@ -421,10 +425,10 @@ class F110_SB_Env(gymnasium.Env):
         steering_angle = ego_action[0]
         speed = ego_action[1]
 
-        scaled_steering_angle = _map_value(
+        scaled_steering_angle = self._map_value(
             steering_angle, (0, +1), (self._s_min, self._s_max)
         )
-        scaled_speed = _map_value(speed, (0, +1), (self._v_min, self._v_max))
+        scaled_speed = self._map_value(speed, (0, +1), (self._v_min, self._v_max))
 
         # print("model_output", ego_action)
         # print("scaled_action", [scaled_steering_angle, scaled_speed])
