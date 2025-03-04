@@ -7,7 +7,8 @@ from os import path
 def roemerlager_map_generator() -> Callable[
     [], Tuple[str, str, List[Tuple[float, float, float]], List["Agent"]]
 ]:
-    maps = ["original", "wide", "narrow", "cones-1", "cones-2", "cones-3"]
+    maps = ["original", "wide", "narrow", "cones-1", "cones-2", "cones-3", "cones-4"]
+    # maps = ["cones-4"]
     maps_ext = ".png"
     reset_pose = [[0.0, 0.0, 0.0]]
 

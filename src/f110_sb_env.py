@@ -445,6 +445,14 @@ class F110_SB_Env(gymnasium.Env):
         self._reset_recording()
 
     def reset(self, *, seed=None, options=None):
+        if options is not None and options.get("reset_map", False):
+            map = options.get("map")
+            map_ext = options.get("map_ext")
+            reset_poses = options.get("reset_poses")
+            other_agents = options.get("other_agents")
+
+            self.change_map(map, map_ext, reset_poses, other_agents)
+
         self._epochs = 0
         self._previous_poses = deque(maxlen=self.MAX_STILL_STEPS)
 

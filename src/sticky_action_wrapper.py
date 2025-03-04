@@ -14,11 +14,15 @@ class StickyActionWrapper(F110_SB_Env_Wrapper):
         tick_rate=0.1,
         fine_rendering=False,
     ):
-        if isinstance(env, F110_SB_Env):
-            self._env = env
-        else:
-            assert isinstance(env, F110_SB_Env_Wrapper)
-            self._env = env.env
+        print("Using StickyActionsWrapper")
+
+        # if isinstance(env, F110_SB_Env):
+        #     self._env = env
+        # else:
+        #     assert isinstance(env, F110_SB_Env_Wrapper)
+        #     self._env = env.env
+
+        self._env = env
 
         self._fine_rendering = fine_rendering
         self._ticks_per_step = int(tick_rate // self._env.TIMESTEP)
@@ -31,7 +35,7 @@ class StickyActionWrapper(F110_SB_Env_Wrapper):
         return self._env
 
     def reset(self, *, seed=None, options=None):
-        return self._env.reset(seed=seed, options=None)
+        return self._env.reset(seed=seed, options=options)
 
     def step(self, action):
         if not self._fine_rendering:

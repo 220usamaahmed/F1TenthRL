@@ -17,11 +17,15 @@ class MultiMapWrapper(F110_SB_Env_Wrapper):
             [], Tuple[str, str, List[Tuple[float, float, float]], List["Agent"]]
         ],
     ):
-        if isinstance(env, F110_SB_Env):
-            self._env = env
-        else:
-            assert isinstance(env, F110_SB_Env_Wrapper)
-            self._env = env.env
+        print("Using MultiMapWrapper")
+
+        # if isinstance(env, F110_SB_Env):
+        #     self._env = env
+        # else:
+        #     assert isinstance(env, F110_SB_Env_Wrapper)
+        #     self._env = env.env
+
+        self._env = env
 
         self._map_generator = map_generator
 
@@ -30,9 +34,18 @@ class MultiMapWrapper(F110_SB_Env_Wrapper):
         return self._env
 
     def reset(self, *, seed=None, options=None):
+        if options is None:
+            options = {}
+        options["reset_map"] = True
+
         map, map_ext, reset_poses, other_agents = self._map_generator()
-        self.env.change_map(map, map_ext, reset_poses, other_agents)
-        return self._env.reset(seed=seed, options=None)
+        options["map"] = map
+        options["map_ext"] = map_ext
+        options["reset_poses"] = reset_poses
+        options["other_agents"] = other_agents
+
+        # self.env.change_map(map, map_ext, reset_poses, other_agents)
+        return self._env.reset(seed=seed, options=options)
 
     def step(self, action):
         return self._env.step(action)
