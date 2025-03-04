@@ -32,8 +32,8 @@ def train_ppo_agent(env: F110_SB_Env, total_timesteps=10000):
         ppo_agent = PPOAgent.create(
             env,
             learning_rate=0.00038641971654092917,
-            n_steps=1024,
-            batch_size=32,
+            n_steps=2048,
+            batch_size=64,
             n_epochs=5,
             gamma=0.9780603367895372,
             net_arch=dict(pi=[64, 32], vf=[256, 128]),
@@ -89,36 +89,30 @@ def run_raceline_follow_agent(env: F110_SB_Env, map_path: str):
 
 def main():
     train = 0
-    runs = 5
+    runs = 1
 
-    # config = load_map_config("roemerlager")
-    config = load_map_config("reference")
+    config = load_map_config("roemerlager")
+    # config = load_map_config("reference")
     env = build_env(
         config,
-        # other_agents=[DummyAgent(0, 0) for _ in range(len(config.starting_poses) - 1)],
         other_agents=[],
         enable_recording=True,
-        lidar_params={
-            "num_beams": 1081,
-            "max_range": 30.0,
-            "fov": 2.3499999046325684 * 2,
-        },
     )
     # env = DummyVecEnv([lambda: env])
     # env = VecNormalize(env, norm_obs=True)
-    # env = StickyActionWrapper(env=env, tick_rate=0.1, fine_rendering=not train)
+    env = StickyActionWrapper(env=env, tick_rate=0.1, fine_rendering=not train)
     # env = MultiMapWrapper(env=env, map_generator=roemerlager_map_generator)
 
     # check_env(env, warn=False)
 
-    run_dummy_agent(env)
+    # run_dummy_agent(env)
 
-    # if train:
-    #     train_ppo_agent(env, total_timesteps=100000)
-    # else:
-    #     model_filepath = load_latest_model(index_from_end=0)
-    #     print(f"Loading model: {model_filepath}")
-    #     run_ppo_agent(env, model_filepath, runs=runs)
+    if train:
+        train_ppo_agent(env, total_timesteps=100000)
+    else:
+        model_filepath = load_latest_model(index_from_end=0)
+        print(f"Loading model: {model_filepath}")
+        run_ppo_agent(env, model_filepath, runs=runs)
 
     # run_ppo_agent_study()
     # display_study_results()

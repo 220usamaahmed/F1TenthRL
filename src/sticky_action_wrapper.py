@@ -59,7 +59,7 @@ class StickyActionWrapper(F110_SB_Env_Wrapper):
             if terminated or truncated:
                 break
 
-        return obs, total_reward / t, terminated, truncated, info
+        return obs, total_reward, terminated, truncated, info
 
     def _fine_step(self, action):
         if self._repeat_counter == 0:

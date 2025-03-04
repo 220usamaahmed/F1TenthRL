@@ -16,18 +16,18 @@ class PPOAgent(SBAgent):
     @staticmethod
     def create(
         env: F110_SB_Env,
-        learning_rate=0.0003,
-        n_steps=512,
+        learning_rate=1e-5,
+        n_steps=2048,
         batch_size=64,
-        n_epochs=10,
+        n_epochs=20,
         gamma=0.99,
-        net_arch=dict(pi=[128, 64], vf=[128, 64]),
+        net_arch=dict(pi=[64, 32], vf=[64, 32]),
         verbose=True,
         tensorboard_logs: typing.Union[str, None] = "./tensorboard_logs",
     ) -> SBAgent:
         policy_kwargs = {
             "features_extractor_class": CustomCombinedExtractor,
-            "features_extractor_kwargs": {"features_dim": 256},
+            "features_extractor_kwargs": {"features_dim": 64},
             "net_arch": net_arch,
         }
 
@@ -41,6 +41,10 @@ class PPOAgent(SBAgent):
             batch_size=batch_size,
             n_epochs=n_epochs,
             gamma=gamma,
+            # ent_coef=0.0,
+            # gae_lambda=0.8,
+            # target_kl=0.01,
+            # clip_range=0.1,
             tensorboard_log=tensorboard_logs,
         )
 
