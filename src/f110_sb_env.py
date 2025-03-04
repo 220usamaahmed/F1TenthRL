@@ -252,10 +252,10 @@ class F110_SB_Env(gymnasium.Env):
         a = max(a, self._sv_min)
 
         transformed_obs = {
-            "scan": obs["scans"][idx],
-            "linear_vel_x": obs["linear_vels_x"][idx],
-            "linear_vel_y": obs["linear_vels_y"][idx],
-            "angular_vel_z": a,
+            "scan": obs["scans"][idx] / self._max_range,
+            "linear_vel_x": obs["linear_vels_x"][idx] / self._v_normalization_factor,
+            "linear_vel_y": obs["linear_vels_y"][idx] / self._v_normalization_factor,
+            "angular_vel_z": a / self._s_normalization_factor,
         }
 
         # assert not np.isnan(transformed_obs["scan"]).any(), "NaN in scans"
@@ -280,7 +280,7 @@ class F110_SB_Env(gymnasium.Env):
         self._recorded_info = []
 
     def _shape_reward(self, action, env_reward, obs, info, idx=EGO_IDX) -> float:
-        return self._r6(action, obs, info, idx)
+        return self._r7(action, obs, info, idx)
 
     def _r1(self, action, obs, info, idx):
         reward = 0
@@ -424,6 +424,22 @@ class F110_SB_Env(gymnasium.Env):
             # reward = 0.2 * r_vel + 0.8 * r_dist + 0.0 * r_a_vel + 0.0 * r_a_vel_delta
 
             reward = r_vel
+
+        return reward
+
+    def _r7(self, action, obs, info, idx):
+        if info["checkpoint_done"][idx]:
+            reward = +100
+        elif obs["collisions"][idx] == 1.0:
+            reward = -1000
+        elif self._check_truncated():
+            reward = -50
+        else:
+            distance_to_boundary = np.min(obs["scans"][idx])
+            velocity = obs["linear_vels_x"][idx]
+            angular_velocity = obs["ang_vels_z"][idx]
+
+            reward = velocity
 
         return reward
 
