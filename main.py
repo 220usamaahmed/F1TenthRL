@@ -88,7 +88,7 @@ def run_raceline_follow_agent(env: F110_SB_Env, map_path: str):
 
 
 def main():
-    train = 0
+    train = 1
     runs = 1
 
     # config = load_map_config("example")
@@ -106,7 +106,7 @@ def main():
     )
     # env = DummyVecEnv([lambda: env])
     # env = VecNormalize(env, norm_obs=True)
-    env = StickyActionWrapper(env=env, tick_rate=0.1, fine_rendering=not train)
+    # env = StickyActionWrapper(env=env, tick_rate=0.1, fine_rendering=not train)
     env = MultiMapWrapper(env=env, map_generator=roemerlager_map_generator)
 
     # check_env(env, warn=False)

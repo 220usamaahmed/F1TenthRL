@@ -280,7 +280,7 @@ class F110_SB_Env(gymnasium.Env):
         self._recorded_info = []
 
     def _shape_reward(self, action, env_reward, obs, info, idx=EGO_IDX) -> float:
-        return self._r6(action, obs, info, idx)
+        return self._r7(action, obs, info, idx)
 
     def _r1(self, action, obs, info, idx):
         reward = 0
@@ -424,6 +424,59 @@ class F110_SB_Env(gymnasium.Env):
             # reward = 0.2 * r_vel + 0.8 * r_dist + 0.0 * r_a_vel + 0.0 * r_a_vel_delta
 
             reward = r_vel
+
+        return reward
+
+    def _r7(self, action, obs, info, idx):
+        # TODO: Use the reward params
+
+        """
+        Generic reward function that weights each component based on reward
+        paramters passed to the environment.
+
+        The following components are considered:
+            - x linear velocity
+            - y linear velocity
+            - z angular velocity
+            - change in z angular velocity
+            - min distance to boundry
+            - change in min distance to boundry
+            - others?
+        """
+        if info["checkpoint_done"][idx]:
+            reward = +1000
+        elif obs["collisions"][idx] == 1.0:
+            reward = -1000
+        elif self._check_truncated():
+            reward = -50
+        else:
+            distance_to_boundary = np.min(obs["scans"][idx])
+            velocity = obs["linear_vels_x"][idx]
+            angular_velocity = obs["ang_vels_z"][idx]
+            previous_angular_velocity = (
+                0
+                if self._previous_obs is None
+                else self._previous_obs["ang_vels_z"][idx]
+            )
+            angular_velocity_delta = angular_velocity - previous_angular_velocity
+
+            vel_norm = velocity / self._v_max
+            dist_norm = distance_to_boundary / self._max_range
+            ang_vel_norm = abs(angular_velocity) / self._sv_max
+            ang_vel_del_norm = abs(angular_velocity_delta) / (2 * self._sv_max)
+            steer_norm = action[0]
+
+            r_vel = vel_norm
+            r_dist = -5 if distance_to_boundary < 0.5 else 0
+            r_a_vel = ang_vel_norm
+            r_a_vel_delta = 1 - min(1, ang_vel_del_norm)
+            r_steer = 1 - abs(steer_norm)
+
+            # reward = 0.2 * r_vel + 0.8 * r_dist + 0.0 * r_a_vel + 0.0 * r_a_vel_delta
+
+            # r_vel = 1 if vel_norm > 0.1 else 0
+
+            reward = r_vel + 0.0 * r_steer + r_dist
 
         return reward
 
