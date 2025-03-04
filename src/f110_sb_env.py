@@ -15,9 +15,9 @@ class F110_SB_Env(gymnasium.Env):
     TIMESTEP = 0.01
     DEFAULT_NUM_BEAMS = 1080
     DEFAULT_FOV = 4.7
-    DEFAULT_MAX_RANGE = 30.0
-    # DEFAULT_SV_MIN = -3.2
-    # DEFAULT_SV_MAX = 3.2
+    DEFAULT_MAX_RANGE = 10.0
+    DEFAULT_SV_MIN = -3.2
+    DEFAULT_SV_MAX = 3.2
     DEFAULT_SV_MIN = -2.0
     DEFAULT_SV_MAX = +2.0
     DEFAULT_S_MIN = -0.4189
@@ -42,9 +42,9 @@ class F110_SB_Env(gymnasium.Env):
         reward_params: typing.Dict = {},
         record=False,
     ):
-        assert len(reset_poses) == len(other_agents) + 1, (
-            f"{len(reset_poses)} reset pose(s) given but there are {len(other_agents) + 1} agent(s)"
-        )
+        assert (
+            len(reset_poses) == len(other_agents) + 1
+        ), f"{len(reset_poses)} reset pose(s) given but there are {len(other_agents) + 1} agent(s)"
 
         self._map = map
         self._map_ext = map_ext
@@ -90,8 +90,8 @@ class F110_SB_Env(gymnasium.Env):
             "s_max": self._s_max,
             "v_min": self._v_min,
             "v_max": self._v_max,
-            "width": 0.30,
-            "length": 0.51,
+            # "width": 0.30,
+            # "length": 0.51,
             # "mu": 1.0489 / 1.2,
         }
 
