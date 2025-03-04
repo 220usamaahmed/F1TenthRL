@@ -39,9 +39,9 @@ class F110_SB_Env(gymnasium.Env):
         reward_params: typing.Dict = {},
         record=False,
     ):
-        assert (
-            len(reset_poses) == len(other_agents) + 1
-        ), f"{len(reset_poses)} reset pose(s) given but there are {len(other_agents) + 1} agent(s)"
+        assert len(reset_poses) == len(other_agents) + 1, (
+            f"{len(reset_poses)} reset pose(s) given but there are {len(other_agents) + 1} agent(s)"
+        )
 
         self.map = map
         self.map_ext = map_ext
@@ -371,7 +371,7 @@ class F110_SB_Env(gymnasium.Env):
 
             # reward = 0.2 * r_vel + 0.8 * r_dist + 0.0 * r_a_vel + 0.0 * r_a_vel_delta
 
-            r_vel = 1 if vel_norm > 0.1 else 0
+            # r_vel = 1 if vel_norm > 0.1 else 0
 
             reward = r_vel + 0.0 * r_steer + r_dist
 

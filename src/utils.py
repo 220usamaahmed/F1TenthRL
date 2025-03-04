@@ -24,9 +24,9 @@ def build_env(
     config: Namespace, other_agents: typing.List[Agent] = [], enable_recording=False
 ) -> F110_SB_Env:
     starting_poses = config.starting_poses
-    assert (
-        len(starting_poses) >= len(other_agents) + 1
-    ), "This env doesn't have enough starting poses specified"
+    assert len(starting_poses) >= len(other_agents) + 1, (
+        "This env doesn't have enough starting poses specified"
+    )
     starting_poses = starting_poses[: len(other_agents) + 1]
 
     return F110_SB_Env(
@@ -55,29 +55,30 @@ def run_environment(
     env.enable_beam_rendering()
     env.render()
 
-    with RuntimeVisualizer() as rv:
-        t = 0
-        while True:
-            if t > max_timesteps:
-                break
-            t += 1
+    t = 0
+    while True:
+        if t > max_timesteps:
+            break
+        t += 1
 
-            action = agent.take_action(obs, info, deterministic=deterministic)
-            obs, step_reward, terminated, truncated, info = env.step(action)
+        action = agent.take_action(obs, info, deterministic=deterministic)
+        obs, step_reward, terminated, truncated, info = env.step(action)
 
-            rv.add_data(action, obs, step_reward)
-            env.render(mode=render_mode)
+        # rv.add_data(action, obs, step_reward)
+        env.render(mode=render_mode)
 
-            if verbose:
-                print(f"--- t = {t:03} {'-' * 16}")
-                print("Action", action)
-                print("Velocity X", obs["linear_vel_x"])
-                print("Velocity Y", obs["linear_vel_y"])
-                print("Angular Velocity Z", obs["angular_vel_z"])
-                print("Reward", step_reward)
+        if verbose:
+            print(f"--- t = {t:03} {'-' * 16}")
+            print("Action", action)
+            print("Velocity X", obs["linear_vel_x"])
+            print("Velocity Y", obs["linear_vel_y"])
+            print("Angular Velocity Z", obs["angular_vel_z"])
+            print("Reward", step_reward)
 
-            if terminated or truncated:
-                break
+        if terminated or truncated:
+            break
+
+    # with RuntimeVisualizer() as rv:
 
 
 def evaluate(env: F110_SB_Env, agent: Agent, n_eval_episodes=10):
@@ -105,6 +106,7 @@ def load_latest_model(index_from_end=0):
         return None
 
     files = os.listdir(base_path)
+    files = [file for file in files if file.endswith(".zip")]
     file = sorted(files, reverse=True)[index_from_end]
     file = os.path.join(
         base_path, os.path.dirname(file), os.path.splitext(os.path.basename(file))[0]

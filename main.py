@@ -89,7 +89,7 @@ def main():
 
     train_ppo_agent(env)
 
-    # model_filepath = load_latest_model(index_from_end=1)
+    # model_filepath = load_latest_model(index_from_end=-1)
     # print(f"Loading model: {model_filepath}")
     # run_ppo_agent(env, model_filepath)
 
