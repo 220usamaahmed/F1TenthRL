@@ -184,7 +184,7 @@ class F110_SB_Env(gymnasium.Env):
                     GL_LINES,
                     None,
                     ("v2f/stream", (0, 0, 0, 0)),
-                    ("c3B/stream", (255, 0, 0, 255, 0, 0)),
+                    ("c4B/stream", (0, 0, 0, 0, 0, 0, 0, 0)),
                 )
                 self._beam_gl_lines.append(gl_line)
 
@@ -216,11 +216,22 @@ class F110_SB_Env(gymnasium.Env):
                 car_theta + ((beam_i / self._num_beams) * self._fov) - (self._fov / 2)
             )
 
-            end_x = car_x + np.cos(theta) * scans[beam_i]
-            end_y = car_y + np.sin(theta) * scans[beam_i]
+            scan = scans[beam_i]
 
-            # TODO: Find out why this is working with 50
+            end_x = car_x + np.cos(theta) * scan
+            end_y = car_y + np.sin(theta) * scan
+
             gl_line.vertices = [car_x * 50, car_y * 50, end_x * 50, end_y * 50]
+            gl_line.colors = (
+                0,
+                0,
+                0,
+                0,
+                255,
+                0,
+                0,
+                int(255 * (scan / self._max_range)),
+            )
 
         pos_x_0 = self._previous_obs["poses_x"][self.EGO_IDX]
         pos_y_0 = self._previous_obs["poses_y"][self.EGO_IDX]
@@ -362,7 +373,7 @@ class F110_SB_Env(gymnasium.Env):
     def disable_beam_rendering(self):
         self._beam_rendering_enabled = False
 
-        for beam_i in range(self._num_beams):
+        for beam_i in range(len(self._beam_gl_lines)):
             self._beam_gl_lines[beam_i].vertices = [0, 0, 0, 0]
 
     def enable_recording(self):

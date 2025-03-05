@@ -58,7 +58,7 @@ def train_ppo_agent(env: F110_SB_Env, total_timesteps=10000):
 def run_ppo_agent(env: F110_SB_Env, model_path: str, runs=1):
     for _ in range(runs):
         ppo_agent = PPOAgent.create_from_saved_model(model_path)
-        env.enable_recording()
+        # env.enable_recording()
         run_environment(env, ppo_agent, deterministic=True, verbose=False)
 
 
@@ -108,7 +108,7 @@ def main():
     # run_dummy_agent(env)
 
     if train:
-        train_ppo_agent(env, total_timesteps=100000)
+        train_ppo_agent(env, total_timesteps=300000)
     else:
         model_filepath = load_latest_model(index_from_end=0)
         print(f"Loading model: {model_filepath}")
