@@ -109,6 +109,8 @@ def load_latest_model(index_from_end=0):
         return None
 
     files = os.listdir(base_path)
+    files = [file for file in files if file.endswith(".zip")]
+
     file = sorted(files, reverse=True)[index_from_end]
     file = os.path.join(
         base_path, os.path.dirname(file), os.path.splitext(os.path.basename(file))[0]

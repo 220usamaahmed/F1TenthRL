@@ -13,6 +13,9 @@ class PPOAgent(SBAgent):
     def __init__(self, model: PPO):
         self._model = model
 
+    def get_model(self) -> PPO:
+        return self._model
+
     @staticmethod
     def create(
         env: F110_SB_Env,

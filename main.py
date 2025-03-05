@@ -19,6 +19,8 @@ from src.utils import (
     load_latest_model,
 )
 from src.map_generators import roemerlager_map_generator
+from src.ga_refinement import refine
+from src.raceline_plotter import plot_racelines
 
 
 def run_dummy_agent(env: F110_SB_Env):
@@ -88,6 +90,9 @@ def run_raceline_follow_agent(env: F110_SB_Env, map_path: str):
 
 
 def main():
+    # refine()
+    # return
+
     train = 0
     runs = 1
 
@@ -104,6 +109,19 @@ def main():
     # env = MultiMapWrapper(env=env, map_generator=roemerlager_map_generator)
 
     # check_env(env, warn=False)
+
+    original_filepath = load_latest_model(index_from_end=1)
+    refined_filepath = load_latest_model(index_from_end=0)
+    print(original_filepath, refined_filepath)
+    plot_racelines(
+        f"{config.map_path}{config.map_ext}",
+        env,
+        {
+            "Original": PPOAgent.create_from_saved_model(original_filepath),
+            "Refined": PPOAgent.create_from_saved_model(refined_filepath),
+        },
+    )
+    return
 
     # run_dummy_agent(env)
 

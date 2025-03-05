@@ -223,7 +223,7 @@ class F110_SB_Env(gymnasium.Env):
 
             gl_line.vertices = [car_x * 50, car_y * 50, end_x * 50, end_y * 50]
             gl_line.colors = (
-                0,
+                255,
                 0,
                 0,
                 0,
