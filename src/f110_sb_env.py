@@ -57,7 +57,7 @@ class F110_SB_Env(gymnasium.Env):
 
         self._beam_rendering_enabled = False
         self._beam_gl_lines = []
-        self._direction_gl_line = None
+        # self._direction_gl_line = None
 
         self._recorded_actions = []
         self._recorded_rewards = []
@@ -189,14 +189,14 @@ class F110_SB_Env(gymnasium.Env):
                 self._beam_gl_lines.append(gl_line)
 
         # Add direction line
-        if not self._direction_gl_line:
-            self._direction_gl_line = env_renderer.batch.add(
-                2,
-                GL_LINES,
-                None,
-                ("v2f/stream", (0, 0, 0, 0)),
-                ("c3B/stream", (255, 255, 255, 0, 255, 0)),
-            )
+        # if not self._direction_gl_line:
+        #     self._direction_gl_line = env_renderer.batch.add(
+        #         2,
+        #         GL_LINES,
+        #         None,
+        #         ("v2f/stream", (0, 0, 0, 0)),
+        #         ("c3B/stream", (255, 255, 255, 0, 255, 0)),
+        #     )
 
         # Updating camera position
         car_vertices = env_renderer.cars[self.EGO_IDX].vertices
@@ -233,23 +233,23 @@ class F110_SB_Env(gymnasium.Env):
                 int(255 * (scan / self._max_range)),
             )
 
-        pos_x_0 = self._previous_obs["poses_x"][self.EGO_IDX]
-        pos_y_0 = self._previous_obs["poses_y"][self.EGO_IDX]
-        pos_x_1 = obs["poses_x"][self.EGO_IDX]
-        pos_y_1 = obs["poses_y"][self.EGO_IDX]
+        # pos_x_0 = self._previous_obs["poses_x"][self.EGO_IDX]
+        # pos_y_0 = self._previous_obs["poses_y"][self.EGO_IDX]
+        # pos_x_1 = obs["poses_x"][self.EGO_IDX]
+        # pos_y_1 = obs["poses_y"][self.EGO_IDX]
 
-        theta = np.arctan2(pos_y_1 - pos_y_0, pos_x_1 - pos_x_0)
-        mag = (pos_y_0 - pos_y_1) ** 2 + (pos_x_0 - pos_x_1) ** 2
+        # theta = np.arctan2(pos_y_1 - pos_y_0, pos_x_1 - pos_x_0)
+        # mag = (pos_y_0 - pos_y_1) ** 2 + (pos_x_0 - pos_x_1) ** 2
 
-        dx = 50 * np.cos(theta)
-        dy = 50 * np.sin(theta)
+        # dx = 50 * np.cos(theta)
+        # dy = 50 * np.sin(theta)
 
-        self._direction_gl_line.vertices = [
-            car_x * 50,
-            car_y * 50,
-            (car_x * 50) + dx,
-            (car_y * 50) + dy,
-        ]
+        # self._direction_gl_line.vertices = [
+        #     car_x * 50,
+        #     car_y * 50,
+        #     (car_x * 50) + dx,
+        #     (car_y * 50) + dy,
+        # ]
 
     def _transform_obs_and_info_for_sb(
         self, obs, info, idx=EGO_IDX
