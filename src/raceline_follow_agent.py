@@ -7,6 +7,7 @@ from src.agent import Agent
 class RacelineFollowAgent(Agent):
 
     def __init__(self, raceline: DataFrame):
+        raise NotImplementedError()
         self._raceline = raceline
 
     def take_action(

@@ -19,10 +19,12 @@ from src.utils import (
     load_latest_model,
 )
 from src.map_generators import roemerlager_map_generator
+from src.ga_refinement import refine
+from src.raceline_plotter import plot_racelines
 
 
 def run_dummy_agent(env: F110_SB_Env):
-    dummy_agent = DummyAgent(steer=0.0, speed=0.1)
+    dummy_agent = DummyAgent(steer=1/0.4189, speed=1.0/2.5)
     run_environment(env, dummy_agent, verbose=True)
 
 
@@ -90,7 +92,7 @@ def run_raceline_follow_agent(env: F110_SB_Env, map_path: str):
 
 def main():
     train = 1
-    runs = 1
+    runs = 10
 
     config = load_map_config("roemerlager")
     # config = load_map_config("reference")
@@ -104,26 +106,49 @@ def main():
     env = StickyActionWrapper(env=env, tick_rate=0.1, fine_rendering=not train)
     # env = MultiMapWrapper(env=env, map_generator=roemerlager_map_generator)
 
-    # check_env(env, warn=False)
-
-    # run_dummy_agent(env)
-
     if train:
         train_ppo_agent(env, total_timesteps=100000, save_freq=10000)
     else:
         model_filepath = load_latest_model(index_from_end=0)
         print(f"Loading model: {model_filepath}")
+        # plot_racelines(
+        # f"{config.map_path}{config.map_ext}",
+        #     env,
+        #     {
+        #         model_filepath: PPOAgent.create_from_saved_model(model_filepath),
+        #     },
+        # )
         run_ppo_agent(env, model_filepath, runs=runs)
-
-    # run_ppo_agent_study()
-    # display_study_results()
-
-    # run_playback_agent(
-    #     env, "./action_recordings/ppo_agent_inf_issue-24-11-29_13:03:01/episode_1.csv"
-    # )
-
-    # run_raceline_follow_agent(env, config.map_path)
 
 
 if __name__ == "__main__":
     main()
+
+
+"""
+refine()
+return
+
+check_env(env, warn=False)
+
+filepath = load_latest_model(index_from_end=-2)
+plot_racelines(
+    f"{config.map_path}{config.map_ext}",
+    env,
+    {
+        filepath: PPOAgent.create_from_saved_model(filepath),
+    },
+)
+return
+
+run_dummy_agent(env)
+
+run_ppo_agent_study()
+display_study_results()
+
+run_playback_agent(
+    env, "./action_recordings/ppo_agent_inf_issue-24-11-29_13:03:01/episode_1.csv"
+)
+
+run_raceline_follow_agent(env, config.map_path)
+"""

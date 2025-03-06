@@ -56,8 +56,10 @@ def run_environment(
 ):
     obs, info = env.reset()
     env.enable_beam_rendering()
+    env.enable_recording()
     env.render()
 
+    # with RuntimeVisualizer() as rv:
     t = 0
     while True:
         if t > max_timesteps:
@@ -74,14 +76,14 @@ def run_environment(
             print(f"--- t = {t:03} {'-' * 16}")
             print("Action", action)
             print("Velocity X", obs["linear_vel_x"])
-            print("Velocity Y", obs["linear_vel_y"])
-            print("Angular Velocity Z", obs["angular_vel_z"])
+            # print("Velocity Y", obs["linear_vel_y"])
+            # print("Angular Velocity Z", obs["angular_vel_z"])
             print("Reward", step_reward)
 
         if terminated or truncated:
             break
 
-    # with RuntimeVisualizer() as rv:
+    save_recording(f"turning-rate-{get_date_tag()}", *env.get_recording())
 
 
 def evaluate(env: F110_SB_Env, agent: Agent, n_eval_episodes=10):
@@ -103,12 +105,14 @@ def evaluate(env: F110_SB_Env, agent: Agent, n_eval_episodes=10):
     return np.mean(reward_sums)
 
 
-def load_latest_model(index_from_end=0):
+def load_latest_model(index_from_end=0) -> str:
     base_path = "./models"
     if not os.path.isdir(base_path):
         return None
 
     files = os.listdir(base_path)
+    files = [file for file in files if file.endswith(".zip")]
+
     file = sorted(files, reverse=True)[index_from_end]
     file = os.path.join(
         base_path, os.path.dirname(file), os.path.splitext(os.path.basename(file))[0]

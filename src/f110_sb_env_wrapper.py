@@ -6,7 +6,7 @@ import gymnasium
 from src.f110_sb_env import F110_SB_Env
 
 
-class F110_SB_Env_Wrapper(ABC, gymnasium.Env):
+class F110_SB_Env_Wrapper(ABC, F110_SB_Env):
     @property
     @abstractmethod
     def env(self) -> F110_SB_Env:
@@ -43,9 +43,9 @@ class F110_SB_Env_Wrapper(ABC, gymnasium.Env):
         return self.env.get_recording()
 
     @abstractmethod
-    def step(self, action):
+    def step(self, action) -> typing.Tuple[typing.Any, float, bool, bool, typing.Dict[str, typing.Any]]:
         pass
 
     @abstractmethod
-    def reset(self, seed=None, options=None):
+    def reset(self, *, seed=None, options=None) -> typing.Tuple[typing.Any, typing.Dict[str, typing.Any]]:
         pass

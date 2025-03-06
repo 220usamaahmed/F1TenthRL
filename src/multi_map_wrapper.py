@@ -17,14 +17,6 @@ class MultiMapWrapper(F110_SB_Env_Wrapper):
             [], Tuple[str, str, List[Tuple[float, float, float]], List["Agent"]]
         ],
     ):
-        print("Using MultiMapWrapper")
-
-        # if isinstance(env, F110_SB_Env):
-        #     self._env = env
-        # else:
-        #     assert isinstance(env, F110_SB_Env_Wrapper)
-        #     self._env = env.env
-
         self._env = env
 
         self._map_generator = map_generator

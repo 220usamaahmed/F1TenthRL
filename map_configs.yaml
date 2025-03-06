@@ -15,13 +15,44 @@ example:
 reference:
   map_path: './maps/reference/reference'
   map_ext: '.png'
-  starting_poses: [[-5.35, -0.75, 0.0]]
+  # starting_poses: [[-5.35, -0.75, 0.0]]
+  starting_poses: [[1.33, 1.17, 1.57]]
   max_timesteps: 1000
 
 # -- Maps from Roemerlager
 
 roemerlager:
   map_path: './maps/roemerlager/original'
+  map_ext: '.png'
+  starting_poses: [[0, 0, 0]]
+  max_timesteps: 1000
+
+roemerlager-wide:
+  map_path: './maps/roemerlager/wide'
+  map_ext: '.png'
+  starting_poses: [[0, 0, 0]]
+  max_timesteps: 1000
+
+roemerlager-narrow:
+  map_path: './maps/roemerlager/narrow'
+  map_ext: '.png'
+  starting_poses: [[0, 0, 0]]
+  max_timesteps: 1000
+
+roemerlager-cones-1:
+  map_path: './maps/roemerlager/cones-1'
+  map_ext: '.png'
+  starting_poses: [[0, 0, 0]]
+  max_timesteps: 1000
+
+roemerlager-cones-2:
+  map_path: './maps/roemerlager/cones-2'
+  map_ext: '.png'
+  starting_poses: [[0, 0, 0]]
+  max_timesteps: 1000
+
+roemerlager-cones-3:
+  map_path: './maps/roemerlager/cones-3'
   map_ext: '.png'
   starting_poses: [[0, 0, 0]]
   max_timesteps: 1000
