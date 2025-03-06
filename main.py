@@ -96,7 +96,7 @@ def main():
     train = 0
     runs = 1
 
-    config = load_map_config("roemerlager-cones-4")
+    config = load_map_config("roemerlager-narrow")
     # config = load_map_config("reference")
     env = build_env(
         config,
@@ -110,25 +110,25 @@ def main():
 
     # check_env(env, warn=False)
 
-    original_filepath = load_latest_model(index_from_end=1)
-    refined_filepath = load_latest_model(index_from_end=0)
-    print(original_filepath, refined_filepath)
-    plot_racelines(
-        f"{config.map_path}{config.map_ext}",
-        env,
-        {
-            "Original": PPOAgent.create_from_saved_model(original_filepath),
-            "Refined": PPOAgent.create_from_saved_model(refined_filepath),
-        },
-    )
-    return
+    # original_filepath = load_latest_model(index_from_end=1)
+    # refined_filepath = load_latest_model(index_from_end=0)
+    # print(original_filepath, refined_filepath)
+    # plot_racelines(
+    #     f"{config.map_path}{config.map_ext}",
+    #     env,
+    #     {
+    #         "Original": PPOAgent.create_from_saved_model(original_filepath),
+    #         "Refined": PPOAgent.create_from_saved_model(refined_filepath),
+    #     },
+    # )
+    # return
 
     # run_dummy_agent(env)
 
     if train:
         train_ppo_agent(env, total_timesteps=300000)
     else:
-        model_filepath = load_latest_model(index_from_end=0)
+        model_filepath = load_latest_model(index_from_end=-1)
         print(f"Loading model: {model_filepath}")
         run_ppo_agent(env, model_filepath, runs=runs)
 
