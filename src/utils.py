@@ -142,7 +142,7 @@ def save_recording(name: str, actions, rewards, observations, infos):
 
 
 def get_date_tag() -> str:
-    return datetime.now().strftime("%y-%m-%d_%H:%M:%S")
+    return datetime.now().strftime("%y-%m-%d_%H-%M-%S")
 
 
 def save_dict_list_to_csv(file_path, dict_list):

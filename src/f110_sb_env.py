@@ -28,7 +28,7 @@ class F110_SB_Env(gymnasium.Env):
     DEFAULT_LENGTH = 0.51
     ACTION_DAMPING_FACTORS = np.array([1.0, 1.0])
     EGO_IDX = 0
-    MAX_EPOCHS = 6000
+    MAX_EPOCHS = 2000
     MAX_STILL_STEPS = 100
     STILL_THRESHOLD = 0.1
 
@@ -294,7 +294,11 @@ class F110_SB_Env(gymnasium.Env):
             reward = +100
         elif obs["collisions"][idx] == 1.0:
             reward = -100
+        elif self._check_truncated():
+            reward = -50
         else:
+            return +0.1
+        
             # reward = 0
             distance_to_boundary = np.min(obs["scans"][idx])
             r_dist = -1 if distance_to_boundary < 0.3 else 1

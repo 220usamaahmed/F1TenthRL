@@ -26,7 +26,7 @@ def run_dummy_agent(env: F110_SB_Env):
     run_environment(env, dummy_agent, verbose=True)
 
 
-def train_ppo_agent(env: F110_SB_Env, total_timesteps=10000):
+def train_ppo_agent(env: F110_SB_Env, total_timesteps=10000, save_freq=10000):
     try:
         # Hyper paramters from Optuna study
         ppo_agent = PPOAgent.create(
@@ -41,7 +41,8 @@ def train_ppo_agent(env: F110_SB_Env, total_timesteps=10000):
         # ppo_agent = PPOAgent.create_from_saved_model(
         #     "", env=env
         # )
-        ppo_agent.learn(total_timesteps=total_timesteps)
+
+        ppo_agent.learn(total_timesteps=total_timesteps, save_freq=save_freq, save_path="./models")
         ppo_agent.save_model(f"./models/ppo_agent_{get_date_tag()}")
         run_environment(env, ppo_agent, deterministic=True, verbose=False)
     except SBAgentLearningException as e:
@@ -88,7 +89,7 @@ def run_raceline_follow_agent(env: F110_SB_Env, map_path: str):
 
 
 def main():
-    train = 0
+    train = 1
     runs = 1
 
     config = load_map_config("roemerlager")
@@ -108,7 +109,7 @@ def main():
     # run_dummy_agent(env)
 
     if train:
-        train_ppo_agent(env, total_timesteps=300000)
+        train_ppo_agent(env, total_timesteps=100000, save_freq=10000)
     else:
         model_filepath = load_latest_model(index_from_end=0)
         print(f"Loading model: {model_filepath}")

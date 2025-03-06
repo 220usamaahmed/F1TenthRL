@@ -2,10 +2,12 @@ import typing
 
 from optuna.trial import Trial
 from src.agent import SBAgent, SBAgentLearningException
+from stable_baselines3.common.callbacks import CheckpointCallback
 from src.f110_sb_env import F110_SB_Env
 from src.feature_extractor import CustomCombinedExtractor
 import numpy as np
 from stable_baselines3 import PPO
+from utils import get_date_tag
 
 
 class PPOAgent(SBAgent):
@@ -63,8 +65,15 @@ class PPOAgent(SBAgent):
         action, _ = self._model.predict(obs, deterministic=deterministic)
         return action
 
-    def learn(self, total_timesteps=1000):
-        self._model.learn(total_timesteps=total_timesteps)
+    def learn(self, total_timesteps=1000, save_freq=1000, save_path="./models/"):
+
+        checkpoint_callback = CheckpointCallback(
+            save_freq=save_freq,
+            save_path=save_path,
+            name_prefix=f"ppo-agent-i_{get_date_tag()}"
+        )
+
+        self._model.learn(total_timesteps=total_timesteps, callback=checkpoint_callback)
         # try:
         #     self._model.learn(total_timesteps=total_timesteps)
         # except Exception as e:
