@@ -26,6 +26,36 @@ roemerlager:
   starting_poses: [[0, 0, 0]]
   max_timesteps: 1000
 
+roemerlager-wide:
+  map_path: './maps/roemerlager/wide'
+  map_ext: '.png'
+  starting_poses: [[0, 0, 0]]
+  max_timesteps: 1000
+
+roemerlager-narrow:
+  map_path: './maps/roemerlager/narrow'
+  map_ext: '.png'
+  starting_poses: [[0, 0, 0]]
+  max_timesteps: 1000
+
+roemerlager-cones-1:
+  map_path: './maps/roemerlager/cones-1'
+  map_ext: '.png'
+  starting_poses: [[0, 0, 0]]
+  max_timesteps: 1000
+
+roemerlager-cones-2:
+  map_path: './maps/roemerlager/cones-2'
+  map_ext: '.png'
+  starting_poses: [[0, 0, 0]]
+  max_timesteps: 1000
+
+roemerlager-cones-3:
+  map_path: './maps/roemerlager/cones-3'
+  map_ext: '.png'
+  starting_poses: [[0, 0, 0]]
+  max_timesteps: 1000
+
 roemerlager-cones-4:
   map_path: './maps/roemerlager/cones-4'
   map_ext: '.png'
