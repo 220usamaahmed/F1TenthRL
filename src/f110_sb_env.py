@@ -15,8 +15,6 @@ class F110_SB_Env(gymnasium.Env):
     TIMESTEP = 0.01
     DEFAULT_NUM_BEAMS = 1081
     DEFAULT_MAX_RANGE = 30.0
-    # DEFAULT_NUM_BEAMS = 135
-    # DEFAULT_MAX_RANGE = 5.0
     DEFAULT_FOV = 2.3499999046325684 * 2
     DEFAULT_SV_MIN = -3.2
     DEFAULT_SV_MAX = 3.2
@@ -99,12 +97,6 @@ class F110_SB_Env(gymnasium.Env):
 
         self._reward_parms = reward_params
 
-        # self._s_normalization_factor = max(abs(self._s_min), self._s_max)
-        # self._v_normalization_factor = max(abs(self._v_min), self._v_max)
-        # self._action_scale_factors = np.array(
-        #     [self._s_normalization_factor, self._v_normalization_factor]
-        # )
-
         self.action_space = self._define_action_space()
         self.observation_space = self._define_observation_space()
 
@@ -127,12 +119,6 @@ class F110_SB_Env(gymnasium.Env):
 
     def _define_action_space(self):
         # action: (steer, speed)
-        # s_min_normalized = self._s_min / self._s_normalization_factor
-        # s_max_normalized = self._s_max / self._s_normalization_factor
-
-        # v_min_normalized = self._v_min / self._v_normalization_factor
-        # v_max_normalized = self._v_max / self._v_normalization_factor
-
         return Box(
             low=np.array([0, 0]),
             high=np.array([+1, +1]),
@@ -151,12 +137,6 @@ class F110_SB_Env(gymnasium.Env):
                 "linear_vel_x": Box(
                     low=self._v_min, high=self._v_max, shape=(), dtype=np.float32
                 ),
-                # "linear_vel_y": Box(
-                #     low=self._v_min, high=self._v_max, shape=(), dtype=np.float32
-                # ),
-                # "angular_vel_z": Box(
-                #     low=self._sv_min, high=self._sv_max, shape=(), dtype=np.float32
-                # ),
             }
         )
 
@@ -264,13 +244,7 @@ class F110_SB_Env(gymnasium.Env):
             "linear_vel_x": obs["linear_vels_x"][idx],
             # "scan": obs["scans"][idx] / self._max_range,
             # "linear_vel_x": obs["linear_vels_x"][idx] / self._v_max,
-            # "linear_vel_y": obs["linear_vels_y"][idx],
-            # "angular_vel_z": a,
         }
-
-        # assert not np.isnan(transformed_obs["scan"]).any(), "NaN in scans"
-        # assert not np.isnan(transformed_obs["linear_vel_x"]), "NaN in lin vel x"
-        # assert not np.isnan(transformed_obs["linear_vel_y"]), "NaN in lin vel y"
 
         transformed_info = {
             "pose_x": obs["poses_x"][idx],
@@ -391,6 +365,11 @@ class F110_SB_Env(gymnasium.Env):
             reset_poses = options.get("reset_poses")
             other_agents = options.get("other_agents")
 
+            assert map is not None
+            assert map_ext is not None
+            assert reset_poses is not None
+            assert other_agents is not None
+
             self.change_map(map, map_ext, reset_poses, other_agents)
 
         self._epochs = 0
@@ -440,10 +419,6 @@ class F110_SB_Env(gymnasium.Env):
             steering_angle, (0, +1), (self._s_min, self._s_max)
         )
         scaled_speed = self._map_value(speed, (0, +1), (self._v_min, self._v_max))
-
-        # print("model_output", ego_action)
-        # print("scaled_action", [scaled_steering_angle, scaled_speed])
-        # print()
 
         all_actions = np.array([[scaled_steering_angle, scaled_speed]])
         self._previous_actions = all_actions

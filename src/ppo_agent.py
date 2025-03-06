@@ -68,10 +68,6 @@ class PPOAgent(SBAgent):
 
     def learn(self, total_timesteps=1000):
         self._model.learn(total_timesteps=total_timesteps)
-        # try:
-        #     self._model.learn(total_timesteps=total_timesteps)
-        # except Exception as e:
-        #     raise SBAgentLearningException(e)
 
     def save_model(self, model_path: str):
         self._model.save(f"{model_path}.zip")

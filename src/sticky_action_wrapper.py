@@ -10,12 +10,10 @@ from src.f110_sb_env_wrapper import F110_SB_Env_Wrapper
 class StickyActionWrapper(F110_SB_Env_Wrapper):
     def __init__(
         self,
-        env: F110_SB_Env_Wrapper,
+        env: typing.Union[F110_SB_Env, F110_SB_Env_Wrapper],
         tick_rate=0.1,
         fine_rendering=False,
     ):
-        print("Using StickyActionsWrapper")
-
         # if isinstance(env, F110_SB_Env):
         #     self._env = env
         # else:
@@ -37,18 +35,19 @@ class StickyActionWrapper(F110_SB_Env_Wrapper):
     def reset(self, *, seed=None, options=None):
         return self._env.reset(seed=seed, options=options)
 
-    def step(self, action):
+    def step(self, action) -> typing.Tuple[typing.Any, float, bool, bool, typing.Dict[str, typing.Any]]:
+        pass
         if not self._fine_rendering:
             return self._step(action)
         else:
             return self._fine_step(action)
 
-    def _step(self, action):
+    def _step(self, action) -> typing.Tuple[typing.Any, float, bool, bool, typing.Dict[str, typing.Any]]:
         obs = None
         total_reward = 0.0
         terminated = False
         truncated = False
-        info = None
+        info = {}
 
         t = 0
         for _ in range(self._ticks_per_step):

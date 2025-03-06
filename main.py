@@ -96,7 +96,7 @@ def main():
     train = 0
     runs = 1
 
-    config = load_map_config("roemerlager")
+    config = load_map_config("roemerlager-cones-4")
     # config = load_map_config("reference")
     env = build_env(
         config,

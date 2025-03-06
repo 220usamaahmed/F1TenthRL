@@ -19,11 +19,9 @@ def evaluate(
 
     for _ in range(n_eval_episodes):
         obs, info = env.reset()
-        reward_sum = 0
         while True:
             action = agent.take_action(obs, info, deterministic=False)
             obs, step_reward, terminated, truncated, info = env.step(action)
-            reward_sum += step_reward
 
             # env.render()
 
@@ -37,7 +35,7 @@ def evaluate(
     return np.mean(lap_times)
 
 
-def run_trails(env, proto_agent, generations=3):
+def run_trails(env, proto_agent, generations=10):
     baseline_score = evaluate(env, proto_agent)
     print("Baseline score", baseline_score)
 
@@ -69,7 +67,7 @@ def pick_best(env: F110_SB_Env, generation: typing.List[GA_PPO_Agent]) -> GA_PPO
 def refine():
     assert N % P == 0
 
-    config = load_map_config("roemerlager")
+    config = load_map_config("roemerlager-cones-4")
     env = build_env(
         config,
         other_agents=[],
