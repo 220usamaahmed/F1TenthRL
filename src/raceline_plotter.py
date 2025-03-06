@@ -47,6 +47,9 @@ def plot_racelines(
     map = mpimg.imread(map_path)
     map = np.flipud(map)
 
+    if len(agents) == 1:
+        axs = [axs]
+
     for i, (name, agent) in enumerate(agents.items()):
         racelines, successes = get_agent_racelines(env, agent, n=per_agent)
 

@@ -9,7 +9,7 @@ def roemerlager_map_generator() -> (
 ):
     maps = ["original", "wide", "narrow", "cones-1", "cones-2", "cones-3", "cones-4"]
     maps_ext = ".png"
-    reset_pose = [(0.0, 0.0, 0.0)]
+    reset_pose = [(0.0, 0.0, random.choice([0.0, -3.14]))]
 
     map: str = path.join("maps", "roemerlager", random.choice(maps))
 

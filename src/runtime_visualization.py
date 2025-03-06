@@ -40,12 +40,12 @@ class RuntimeVisualizer:
         obs_legend.setBrush(pg.mkBrush(100, 100, 100, 150))
 
         x_lin_vel_curve = obs_plot.plot(pen="r")
-        y_lin_vel_curve = obs_plot.plot(pen="g")
-        z_ang_vel_curve = obs_plot.plot(pen="y")
+        # y_lin_vel_curve = obs_plot.plot(pen="g")
+        # z_ang_vel_curve = obs_plot.plot(pen="y")
 
         obs_legend.addItem(x_lin_vel_curve, "X Linear Velocity")
-        obs_legend.addItem(y_lin_vel_curve, "Y Linear Velocity")
-        obs_legend.addItem(z_ang_vel_curve, "Z Angular Velocity")
+        # obs_legend.addItem(y_lin_vel_curve, "Y Linear Velocity")
+        # obs_legend.addItem(z_ang_vel_curve, "Z Angular Velocity")
 
         win.nextRow()
 
@@ -66,8 +66,8 @@ class RuntimeVisualizer:
         reward_curve = reward_plot.plot(pen="y")
 
         x_lin_vel_data = deque(maxlen=RuntimeVisualizer.WINDOW_SIZE)
-        y_lin_vel_data = deque(maxlen=RuntimeVisualizer.WINDOW_SIZE)
-        z_ang_vel_data = deque(maxlen=RuntimeVisualizer.WINDOW_SIZE)
+        # y_lin_vel_data = deque(maxlen=RuntimeVisualizer.WINDOW_SIZE)
+        # z_ang_vel_data = deque(maxlen=RuntimeVisualizer.WINDOW_SIZE)
         steer_data = deque(maxlen=RuntimeVisualizer.WINDOW_SIZE)
         speed_data = deque(maxlen=RuntimeVisualizer.WINDOW_SIZE)
         reward_data = deque(maxlen=RuntimeVisualizer.WINDOW_SIZE)
@@ -77,8 +77,8 @@ class RuntimeVisualizer:
                 action, observation, reward = queue.get()
 
                 x_lin_vel_data.append(observation["linear_vel_x"])
-                y_lin_vel_data.append(observation["linear_vel_y"])
-                z_ang_vel_data.append(observation["angular_vel_z"])
+                # y_lin_vel_data.append(observation["linear_vel_y"])
+                # z_ang_vel_data.append(observation["angular_vel_z"])
 
                 steer_data.append(action[0])
                 speed_data.append(action[1])
@@ -89,8 +89,8 @@ class RuntimeVisualizer:
             x = np.linspace(0, n, n)
 
             x_lin_vel_curve.setData(x, x_lin_vel_data)
-            y_lin_vel_curve.setData(x, y_lin_vel_data)
-            z_ang_vel_curve.setData(x, z_ang_vel_data)
+            # y_lin_vel_curve.setData(x, y_lin_vel_data)
+            # z_ang_vel_curve.setData(x, z_ang_vel_data)
 
             steer_curve.setData(x, steer_data)
             speed_curve.setData(x, speed_data)

@@ -20,8 +20,8 @@ class F110_SB_Env(gymnasium.Env):
     DEFAULT_SV_MAX = 3.2
     DEFAULT_S_MIN = -0.4189
     DEFAULT_S_MAX = 0.4189
-    DEFAULT_V_MIN = 1.0
-    DEFAULT_V_MAX = 5.0
+    DEFAULT_V_MIN = 0.7
+    DEFAULT_V_MAX = 2.5
     DEFAULT_WIDTH = 0.3
     DEFAULT_LENGTH = 0.51
     ACTION_DAMPING_FACTORS = np.array([1.0, 1.0])
@@ -29,6 +29,7 @@ class F110_SB_Env(gymnasium.Env):
     MAX_EPOCHS = 6000
     MAX_STILL_STEPS = 100
     STILL_THRESHOLD = 0.1
+    MU = 1.0489 * 0.7
 
     def __init__(
         self,
@@ -93,6 +94,7 @@ class F110_SB_Env(gymnasium.Env):
             "v_max": self._v_max,
             "width": self.width,
             "length": self.length,
+            "mu": self.MU
         }
 
         self._reward_parms = reward_params
@@ -265,13 +267,14 @@ class F110_SB_Env(gymnasium.Env):
 
     def _shape_reward(self, action, env_reward, obs, info, idx=EGO_IDX) -> float:
         if info["checkpoint_done"][idx]:
-            reward = +100
+            reward = +1000
         elif obs["collisions"][idx] == 1.0:
-            reward = -100
+            reward = -1000
         else:
             # reward = 0
             distance_to_boundary = np.min(obs["scans"][idx])
-            r_dist = -1 if distance_to_boundary < 0.3 else 1
+            # r_dist = -10 if distance_to_boundary < 0.3 else 10
+            r_dist = 10 * (distance_to_boundary / self._max_range)
 
             # velocity = obs["linear_vels_x"][idx]
             # vel_norm = velocity / self._v_max
@@ -279,8 +282,9 @@ class F110_SB_Env(gymnasium.Env):
 
             r_vel = action[1]
 
-            steer = abs(self._map_value(action[0], (0, 1), (-1, 1)))
-            r_steer = -2 * steer
+            # steer = abs(self._map_value(action[0], (0, 1), (-1, 1)))
+            # r_steer = -1 * steer
+            r_steer = 0
 
             reward = r_vel + r_dist + r_steer
 
@@ -401,7 +405,6 @@ class F110_SB_Env(gymnasium.Env):
         return transformed_obs, transformed_info
 
     def _map_value(self, value, current_range, desired_range):
-        """Maps a value from its current range to a desired range."""
         cur_min, cur_max = current_range
         des_min, des_max = desired_range
         return des_min + (value - cur_min) * (des_max - des_min) / (cur_max - cur_min)
