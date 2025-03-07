@@ -7,7 +7,7 @@ from src.f110_sb_env import F110_SB_Env
 from src.feature_extractor import CustomCombinedExtractor
 import numpy as np
 from stable_baselines3 import PPO
-from utils import get_date_tag
+from src.utils import get_date_tag
 
 
 class PPOAgent(SBAgent):

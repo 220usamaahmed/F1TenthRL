@@ -21,11 +21,13 @@ from src.utils import (
 from src.map_generators import roemerlager_map_generator
 from src.ga_refinement import refine
 from src.raceline_plotter import plot_racelines
+import os
 
 
 def run_dummy_agent(env: F110_SB_Env):
-    dummy_agent = DummyAgent(steer=1/0.4189, speed=1.0/2.5)
-    run_environment(env, dummy_agent, verbose=True)
+    # dummy_agent = DummyAgent(steer=1/0.4189, speed=1.0/2.5)
+    dummy_agent = DummyAgent(steer=1.0, speed=0.2)
+    run_environment(env, dummy_agent, verbose=False)
 
 
 def train_ppo_agent(env: F110_SB_Env, total_timesteps=10000, save_freq=10000):
@@ -44,7 +46,7 @@ def train_ppo_agent(env: F110_SB_Env, total_timesteps=10000, save_freq=10000):
         #     "", env=env
         # )
 
-        ppo_agent.learn(total_timesteps=total_timesteps, save_freq=save_freq, save_path="./models")
+        ppo_agent.learn(total_timesteps=total_timesteps, save_freq=save_freq, save_path=f"./models/ppo_agent_{get_date_tag()}/")
         ppo_agent.save_model(f"./models/ppo_agent_{get_date_tag()}")
         run_environment(env, ppo_agent, deterministic=True, verbose=False)
     except SBAgentLearningException as e:
@@ -91,23 +93,24 @@ def run_raceline_follow_agent(env: F110_SB_Env, map_path: str):
 
 
 def main():
-    train = 1
-    runs = 10
+    train = 0
+    runs = 1
 
-    config = load_map_config("roemerlager")
     # config = load_map_config("reference")
+    config = load_map_config("roemerlager-cones-4")
     env = build_env(
         config,
         other_agents=[],
         enable_recording=True,
     )
-    # env = DummyVecEnv([lambda: env])
-    # env = VecNormalize(env, norm_obs=True)
     env = StickyActionWrapper(env=env, tick_rate=0.1, fine_rendering=not train)
     # env = MultiMapWrapper(env=env, map_generator=roemerlager_map_generator)
 
+    # run_dummy_agent(env)
+    # return
+
     if train:
-        train_ppo_agent(env, total_timesteps=100000, save_freq=10000)
+        train_ppo_agent(env, total_timesteps=2000000, save_freq=100000)
     else:
         model_filepath = load_latest_model(index_from_end=0)
         print(f"Loading model: {model_filepath}")
@@ -126,6 +129,9 @@ if __name__ == "__main__":
 
 
 """
+# env = DummyVecEnv([lambda: env])
+# env = VecNormalize(env, norm_obs=True)
+
 refine()
 return
 

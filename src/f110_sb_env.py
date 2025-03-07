@@ -13,20 +13,20 @@ if typing.TYPE_CHECKING:
 
 class F110_SB_Env(gymnasium.Env):
     TIMESTEP = 0.01
-    DEFAULT_NUM_BEAMS = 1081
+    DEFAULT_NUM_BEAMS = 1080
     DEFAULT_MAX_RANGE = 30.0
     DEFAULT_FOV = 2.3499999046325684 * 2
     DEFAULT_SV_MIN = -3.2
     DEFAULT_SV_MAX = 3.2
     DEFAULT_S_MIN = -0.4189
     DEFAULT_S_MAX = 0.4189
-    DEFAULT_V_MIN = 0.7
-    DEFAULT_V_MAX = 2.5
+    DEFAULT_V_MIN = 2.0
+    DEFAULT_V_MAX = 5.0
     DEFAULT_WIDTH = 0.3
     DEFAULT_LENGTH = 0.51
     ACTION_DAMPING_FACTORS = np.array([1.0, 1.0])
     EGO_IDX = 0
-    MAX_EPOCHS = 2000
+    MAX_EPOCHS = 6000
     MAX_STILL_STEPS = 100
     STILL_THRESHOLD = 0.1
     MU = 1.0489 * 0.7
@@ -68,6 +68,8 @@ class F110_SB_Env(gymnasium.Env):
         self._previous_actions = None
 
         self._previous_poses = deque(maxlen=self.MAX_STILL_STEPS)
+        self._previous_scans = deque(maxlen=10)
+
         self._num_beams = lidar_params.get("num_beams", F110_SB_Env.DEFAULT_NUM_BEAMS)
         self._fov = lidar_params.get("fov", F110_SB_Env.DEFAULT_FOV)
         self._max_range = lidar_params.get("max_range", F110_SB_Env.DEFAULT_MAX_RANGE)
@@ -90,7 +92,8 @@ class F110_SB_Env(gymnasium.Env):
             "sv_max": self._sv_max,
             "s_min": self._s_min,
             "s_max": self._s_max,
-            "v_min": self._v_min,
+            # "v_min": self._v_min,
+            "v_min": -5,
             "v_max": self._v_max,
             "width": self.width,
             "length": self.length,
@@ -131,13 +134,13 @@ class F110_SB_Env(gymnasium.Env):
         return Dict(
             {
                 "scan": Box(
-                    low=0,
-                    high=self._max_range,
+                    low=0.0,
+                    high=1.0,
                     shape=(self._num_beams,),
                     dtype=np.float32,
                 ),
                 "linear_vel_x": Box(
-                    low=self._v_min, high=self._v_max, shape=(), dtype=np.float32
+                    low=0.0, high=1.0, shape=(), dtype=np.float32
                 ),
             }
         )
@@ -187,12 +190,26 @@ class F110_SB_Env(gymnasium.Env):
         env_renderer.set_center(x, y)
 
     def _update_beam_gl_lines(self, obs):
+        if len(self._previous_scans) == 0:
+            return
+
         car_x = obs["poses_x"][self.EGO_IDX]
         car_y = obs["poses_y"][self.EGO_IDX]
         car_theta = obs["poses_theta"][self.EGO_IDX]
         scans = obs["scans"][self.EGO_IDX]
+        previous_scans = self._previous_scans[0]
+        if previous_scans is None:
+            previous_scans = np.zeros_like(scans)
 
-        for beam_i in range(self._num_beams):
+        p = 4
+        scan_diffs = previous_scans - scans
+        scan_diffs_normalized = self._map_value(scan_diffs, (np.min(scan_diffs), np.max(scan_diffs)), (0, 1)).flatten()
+        scan_diffs_normalized = np.exp(p * scan_diffs_normalized)
+        scan_diffs_normalized = self._map_value(scan_diffs_normalized, (0, np.exp(p)), (0, 255)).astype(int)
+
+        scan_diffs_normalized = np.where(scan_diffs_normalized < 128, 0, 255)
+
+        for beam_i in range(0, self._num_beams, 5):
             gl_line = self._beam_gl_lines[beam_i]
             theta = (
                 car_theta + ((beam_i / self._num_beams) * self._fov) - (self._fov / 2)
@@ -208,11 +225,13 @@ class F110_SB_Env(gymnasium.Env):
                 255,
                 0,
                 0,
-                0,
+                scan_diffs_normalized[beam_i],
+
                 255,
                 0,
                 0,
-                int(255 * (scan / self._max_range)),
+                scan_diffs_normalized[beam_i],
+                # int(255 * (scan / self._max_range)),
             )
 
         # pos_x_0 = self._previous_obs["poses_x"][self.EGO_IDX]
@@ -236,16 +255,12 @@ class F110_SB_Env(gymnasium.Env):
     def _transform_obs_and_info_for_sb(
         self, obs, info, idx=EGO_IDX
     ) -> typing.Tuple[dict, dict]:
-        # TODO: Issue with inf in angular velocity
-        a = obs["ang_vels_z"][idx]
-        a = min(a, self._sv_max)
-        a = max(a, self._sv_min)
+        scans = obs["scans"][idx]
+        scans = np.concatenate((scans, [scans[-1]]))
 
         transformed_obs = {
-            "scan": obs["scans"][idx],
-            "linear_vel_x": obs["linear_vels_x"][idx],
-            # "scan": obs["scans"][idx] / self._max_range,
-            # "linear_vel_x": obs["linear_vels_x"][idx] / self._v_max,
+            "scan": scans / self._max_range,
+            "linear_vel_x": obs["linear_vels_x"][idx] / self._v_max,
         }
 
         transformed_info = {
@@ -273,6 +288,9 @@ class F110_SB_Env(gymnasium.Env):
         elif self._check_truncated():
             reward = -50
         else:
+            r_vel = obs["linear_vels_x"][idx] / self._v_max
+            return r_vel
+
             return +0.1
         
             # reward = 0
@@ -381,7 +399,8 @@ class F110_SB_Env(gymnasium.Env):
             self.change_map(map, map_ext, reset_poses, other_agents)
 
         self._epochs = 0
-        self._previous_poses = deque(maxlen=self.MAX_STILL_STEPS)
+        self._previous_poses.clear()
+        self._previous_scans.clear()
 
         obs, reward, _, info = self._env.reset(np.array(self._reset_poses))
         self._previous_obs = obs
@@ -426,6 +445,9 @@ class F110_SB_Env(gymnasium.Env):
             steering_angle, (0, +1), (self._s_min, self._s_max)
         )
         scaled_speed = self._map_value(speed, (0, +1), (self._v_min, self._v_max))
+
+        # print(f"agent output: {speed}")
+        # print(f"scaled: {scaled_speed}")
 
         all_actions = np.array([[scaled_steering_angle, scaled_speed]])
         self._previous_actions = all_actions
@@ -496,6 +518,8 @@ class F110_SB_Env(gymnasium.Env):
 
         self._previous_obs = obs
         self._previous_info = info
+
+        self._previous_scans.append(obs["scans"])
 
         self._previous_poses.append(
             (

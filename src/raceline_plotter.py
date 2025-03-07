@@ -6,13 +6,13 @@ import matplotlib.image as mpimg
 import numpy as np
 
 
-def get_raceline(env: F110_SB_Env, agent: Agent):
+def get_raceline(env: F110_SB_Env, agent: Agent, deterministic: bool = False):
     raceline = []
     success = False
 
     obs, info = env.reset()
     while True:
-        action = agent.take_action(obs, info, deterministic=False)
+        action = agent.take_action(obs, info, deterministic=deterministic)
         obs, reward, terminated, truncated, info = env.step(action)
 
         x = (info.get("pose_x", 0) + 6.67) / 0.05
@@ -33,7 +33,7 @@ def get_agent_racelines(env: F110_SB_Env, agent: Agent, n=5):
     successes = []
 
     for _ in range(n):
-        raceline, success = get_raceline(env, agent)
+        raceline, success = get_raceline(env, agent, deterministic=n == 1)
         racelines.append(raceline)
         successes.append(success)
 
@@ -41,7 +41,7 @@ def get_agent_racelines(env: F110_SB_Env, agent: Agent, n=5):
 
 
 def plot_racelines(
-    map_path: str, env: F110_SB_Env, agents: typing.Dict[str, Agent], per_agent=20
+    map_path: str, env: F110_SB_Env, agents: typing.Dict[str, Agent], per_agent=1
 ):
     fig, axs = plt.subplots(1, len(agents))
     map = mpimg.imread(map_path)
