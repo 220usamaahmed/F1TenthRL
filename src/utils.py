@@ -53,36 +53,57 @@ def run_environment(
     max_timesteps=np.inf,
     verbose=False,
     render_mode="human_slow",
+    rv=None
 ):
     obs, info = env.reset()
     env.enable_beam_rendering()
     env.render()
 
-    with RuntimeVisualizer() as rv:
-        t = 0
-        while True:
-            if t > max_timesteps:
-                break
-            t += 1
+    t = 0
+    while True:
+        if t > max_timesteps:
+            break
+        t += 1
 
-            action = agent.take_action(obs, info, deterministic=deterministic)
-            obs, step_reward, terminated, truncated, info = env.step(action)
+        action = agent.take_action(obs, info, deterministic=deterministic)
+        obs, step_reward, terminated, truncated, info = env.step(action)
 
+        if rv is not None:
             rv.add_data(action, obs, step_reward)
-            env.render(mode=render_mode)
 
-            if verbose:
-                print(f"--- t = {t:03} {'-' * 16}")
-                print("Action", action)
-                print("Velocity X", obs["linear_vel_x"])
-                # print("Velocity Y", obs["linear_vel_y"])
-                # print("Angular Velocity Z", obs["angular_vel_z"])
-                print("Reward", step_reward)
+        env.render(mode=render_mode)
 
-            if terminated or truncated:
-                break
+        if verbose:
+            print(f"--- t = {t:03} {'-' * 16}")
+            print("Action", action)
+            print("Velocity X", obs["linear_vel_x"])
+            print("Reward", step_reward)
+            print("Info", info)
+
+        if terminated or truncated:
+            break
     if env.record:
         save_recording(f"sudden-jump-{get_date_tag()}", *env.get_recording())
+
+
+def run_environment_with_plots(
+    env: F110_SB_Env,
+    agent: Agent,
+    deterministic=True,
+    max_timesteps=np.inf,
+    verbose=False,
+    render_mode="human_slow",
+):
+    with RuntimeVisualizer() as rv:
+        run_environment(
+            env=env,
+            agent=agent,
+            deterministic=deterministic,
+            max_timesteps=max_timesteps,
+            verbose=verbose,
+            render_mode=render_mode,
+            rv=rv
+        )
 
 
 def evaluate(env: F110_SB_Env, agent: Agent, n_eval_episodes=10):
@@ -104,10 +125,13 @@ def evaluate(env: F110_SB_Env, agent: Agent, n_eval_episodes=10):
     return np.mean(reward_sums)
 
 
-def load_latest_model(index_from_end=0) -> str:
-    base_path = "./models"
+def load_latest_model(tag: str, index_from_end=0) -> str:
+    base_path = f"./models/ppo_agent-{tag}/"
+
+    print(base_path)
+
     if not os.path.isdir(base_path):
-        return None
+        raise Exception("Could not find models folder")
 
     files = os.listdir(base_path)
     files = [file for file in files if file.endswith(".zip")]

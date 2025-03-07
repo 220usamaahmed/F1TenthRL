@@ -6,6 +6,9 @@ import numpy as np
 from f110_gym.envs.base_classes import Integrator
 from pyglet.gl import GL_LINES
 from collections import deque
+from stable_baselines3.common.callbacks import BaseCallback
+from stable_baselines3.common.logger import Logger
+from stable_baselines3.common.callbacks import CheckpointCallback
 
 if typing.TYPE_CHECKING:
     from src.agent import Agent
@@ -20,13 +23,13 @@ class F110_SB_Env(gymnasium.Env):
     DEFAULT_SV_MAX = 3.2
     DEFAULT_S_MIN = -0.4189
     DEFAULT_S_MAX = 0.4189
-    DEFAULT_V_MIN = 2.0
+    DEFAULT_V_MIN = 0.7
     DEFAULT_V_MAX = 5.0
     DEFAULT_WIDTH = 0.3
     DEFAULT_LENGTH = 0.51
     ACTION_DAMPING_FACTORS = np.array([1.0, 1.0])
     EGO_IDX = 0
-    MAX_EPOCHS = 6000
+    MAX_EPOCHS = 2000
     MAX_STILL_STEPS = 100
     STILL_THRESHOLD = 0.1
     MU = 1.0489 * 0.7
@@ -68,7 +71,7 @@ class F110_SB_Env(gymnasium.Env):
         self._previous_actions = None
 
         self._previous_poses = deque(maxlen=self.MAX_STILL_STEPS)
-        self._previous_scans = deque(maxlen=10)
+        self._previous_scans = deque(maxlen=20)
 
         self._num_beams = lidar_params.get("num_beams", F110_SB_Env.DEFAULT_NUM_BEAMS)
         self._fov = lidar_params.get("fov", F110_SB_Env.DEFAULT_FOV)
@@ -136,7 +139,7 @@ class F110_SB_Env(gymnasium.Env):
                 "scan": Box(
                     low=0.0,
                     high=1.0,
-                    shape=(self._num_beams,),
+                    shape=(self._num_beams + 1,), # Assuming it was 1080, sim has issue with 1081
                     dtype=np.float32,
                 ),
                 "linear_vel_x": Box(
@@ -203,6 +206,7 @@ class F110_SB_Env(gymnasium.Env):
 
         p = 4
         scan_diffs = previous_scans - scans
+        scan_diffs[scan_diffs <= 0] = 0
         scan_diffs_normalized = self._map_value(scan_diffs, (np.min(scan_diffs), np.max(scan_diffs)), (0, 1)).flatten()
         scan_diffs_normalized = np.exp(p * scan_diffs_normalized)
         scan_diffs_normalized = self._map_value(scan_diffs_normalized, (0, np.exp(p)), (0, 255)).astype(int)
@@ -225,13 +229,14 @@ class F110_SB_Env(gymnasium.Env):
                 255,
                 0,
                 0,
-                scan_diffs_normalized[beam_i],
+                # scan_diffs_normalized[beam_i],
+                0,
 
                 255,
                 0,
                 0,
-                scan_diffs_normalized[beam_i],
-                # int(255 * (scan / self._max_range)),
+                # scan_diffs_normalized[beam_i],
+                int(255 * (scan / self._max_range)),
             )
 
         # pos_x_0 = self._previous_obs["poses_x"][self.EGO_IDX]
@@ -282,7 +287,7 @@ class F110_SB_Env(gymnasium.Env):
 
     def _shape_reward(self, action, env_reward, obs, info, idx=EGO_IDX) -> float:
         if info["checkpoint_done"][idx]:
-            reward = +1000
+            reward = +100
         elif obs["collisions"][idx] == 1.0:
             reward = -100
         elif self._check_truncated():
@@ -551,3 +556,34 @@ class F110_SB_Env(gymnasium.Env):
             self._recorded_observations,
             self._recorded_info,
         )
+
+
+class CustomCheckpointCallback(CheckpointCallback):
+    def __init__(self, save_freq, save_path, name_prefix, verbose=False):
+        super().__init__(save_freq, save_path, name_prefix, verbose)
+        self.checkpoint_done_count = 0
+        self.lap_times = []
+
+    def _on_step(self) -> bool:
+        # Call parent method to handle checkpoint saving
+        super()._on_step()
+
+        infos = self.locals["infos"]  # List of info dicts from env step
+        dones = self.locals["dones"]  # List of bools indicating episode end
+        
+        for i, done in enumerate(dones):
+            if done:  # Only process at episode termination
+                if infos[i]["checkpoint_done"]:
+                    self.checkpoint_done_count += 1
+                    self.lap_times.append(infos[i]["lap_time"])
+
+                # Log when an episode ends
+                self.logger.record("custom/checkpoint_done_count", self.checkpoint_done_count)
+                if self.lap_times:
+                    self.logger.record("custom/successful_lap_time", np.mean(self.lap_times))
+
+                # Reset per-episode variables
+                # self.checkpoint_done_count = 0
+                # self.lap_times = []
+
+        return True

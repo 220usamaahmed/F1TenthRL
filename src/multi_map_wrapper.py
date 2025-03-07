@@ -1,5 +1,5 @@
 from random import choice
-from typing import Callable, List, Tuple
+from typing import Callable, List, Tuple, Union
 
 import gymnasium
 
@@ -12,7 +12,7 @@ from src.utils import build_env, load_map_config
 class MultiMapWrapper(F110_SB_Env_Wrapper):
     def __init__(
         self,
-        env: F110_SB_Env_Wrapper,
+        env: Union[F110_SB_Env_Wrapper, F110_SB_Env],
         map_generator: Callable[
             [], Tuple[str, str, List[Tuple[float, float, float]], List["Agent"]]
         ],
