@@ -68,14 +68,17 @@ class PPOAgent(SBAgent):
         action, _ = self._model.predict(obs, deterministic=deterministic)
         return action
 
-    def learn(self, total_timesteps=1000, save_freq=1000, save_path="./models/"):
+    def learn(self, model_tag: str, total_timesteps=1000, save_freq=1000, save_path="./models/"):
         callback = CustomCheckpointCallback(
             save_freq=save_freq,
             save_path=save_path,
             name_prefix=f"ppo-agent_"
         )
 
-        self._model.learn(total_timesteps=total_timesteps, callback=callback)
+        if model_tag.split("_")[-1].isnumeric():
+            model_tag = "_".join(model_tag.split("_")[:-1])
+
+        self._model.learn(total_timesteps=total_timesteps, callback=callback, tb_log_name=model_tag)
         # try:
         #     self._model.learn(total_timesteps=total_timesteps)
         # except Exception as e:

@@ -17,6 +17,7 @@ from src.utils import (
     save_recording,
     get_date_tag,
     load_latest_model,
+    load_latest_models,
     run_environment_with_plots
 )
 from src.map_generators import roemerlager_map_generator
@@ -54,8 +55,8 @@ def train(sticky_actions: bool, multi_map: bool, timesteps: int, save_freq: int)
         # Hyper paramters from Optuna study
         ppo_agent = PPOAgent.create(
             env,
-            # learning_rate=0.00038641971654092917,
-            # gamma=0.9780603367895372,
+            learning_rate=0.00038641971654092917,
+            gamma=0.9780603367895372,
             n_steps=2048,
             batch_size=64,
             n_epochs=5,
@@ -64,7 +65,7 @@ def train(sticky_actions: bool, multi_map: bool, timesteps: int, save_freq: int)
         # ppo_agent = PPOAgent.create_from_saved_model(
         #     "", env=env
         # )
-        ppo_agent.learn(total_timesteps=timesteps, save_freq=save_freq, save_path=save_path)
+        ppo_agent.learn(model_tag=save_tag, total_timesteps=timesteps, save_freq=save_freq, save_path=save_path)
         # ppo_agent.save_model(f"./models/ppo_agent_{get_date_tag()}")
         run_environment(env, ppo_agent, deterministic=True, verbose=False)
     except SBAgentLearningException as e:
@@ -89,23 +90,28 @@ def run(config_name: str, model_tag: str, index_from_end: int, runs: int, sticky
     for _ in range(runs):
         ppo_agent = PPOAgent.create_from_saved_model(model_filepath)
         # env.enable_recording()
-        run_environment_with_plots(env, ppo_agent, deterministic=True, verbose=False)
+        run_environment_with_plots(env, ppo_agent, deterministic=False, verbose=False)
 
 def plot_raceline(config_name: str, model_tag: str, index_from_end: int):
     print(f"Plotting racelines with index_from_end={index_from_end}")
 
     env = get_env(config_name=config_name, sticky_actions=True, multi_map=False, fine_rendering=True)
     config = load_map_config(config_name)
-    filepath = load_latest_model(model_tag, index_from_end=index_from_end)
 
-    print("model: ", filepath)
+    agents = {}
+
+    for tag in model_tag.split(","):
+        filepath = load_latest_model(tag, index_from_end=index_from_end)
+        print("model: ", filepath)
+        name = filepath.split("__")[-1]
+        agents[name] = PPOAgent.create_from_saved_model(filepath)
 
     plot_racelines(
         f"{config.map_path}{config.map_ext}",
         env,
-        {
-            filepath: PPOAgent.create_from_saved_model(filepath),
-        },
+        agents,
+        cmap="speed",
+        per_agent=1
     )
 
 def run_dummy_agent(speed: float, steer: float):
@@ -122,8 +128,28 @@ def run_playback_agent(save_file: str):
     playback_agent = PlaybackAgent(recording_path=save_file)
     run_environment(env, playback_agent, deterministic=True, verbose=True)
 
-def compare_racelines(models_path: str, last_n: int, skip: int):
-    print(f"Comparing racelines with models_path={models_path}, last_n={last_n}, skip={skip}")
+def compare_racelines(config_name, model_tag: str, last_n: int):
+    print(f"Comparing racelines with models_path={model_tag}, last_n={last_n}")
+
+    env = get_env(config_name=config_name, sticky_actions=True, multi_map=False, fine_rendering=True)
+    config = load_map_config(config_name)
+    paths = load_latest_models(model_tag)
+
+    agents = {}
+
+    for path in paths:
+        print("model: ", path)
+        name = path.split("__")[-1]
+        agents[name] = PPOAgent.create_from_saved_model(path)
+
+    plot_racelines(
+        f"{config.map_path}{config.map_ext}",
+        env,
+        agents,
+        per_agent=10,
+        cmap="success"
+        # cmap="speed"
+    )
 
 def run_refinement():
     raise NotImplementedError
@@ -167,10 +193,10 @@ def main():
     playback_parser.set_defaults(func=lambda args: run_playback_agent(args.save_file))
     
     compare_parser = subparsers.add_parser("compare_racelines")
-    compare_parser.add_argument("--models_path", type=str, required=True)
-    compare_parser.add_argument("--last_n", type=int, required=True)
-    compare_parser.add_argument("--skip", type=int, required=True)
-    compare_parser.set_defaults(func=lambda args: compare_racelines(args.models_path, args.last_n, args.skip))
+    compare_parser.add_argument("--config_name", type=str, required=False, default="roemerlager")
+    compare_parser.add_argument("--model_tag", type=str, required=True)
+    compare_parser.add_argument("--last_n", type=int, required=False, default=2)
+    compare_parser.set_defaults(func=lambda args: compare_racelines(args.config_name, args.model_tag, args.last_n))
 
     refine_parser = subparsers.add_parser("refine")
     refine_parser.set_defaults(func=lambda _: run_refinement())

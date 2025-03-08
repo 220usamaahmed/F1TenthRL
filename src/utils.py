@@ -8,6 +8,7 @@ import csv
 from src.agent import Agent
 from src.f110_sb_env import F110_SB_Env
 from src.runtime_visualization import RuntimeVisualizer
+import time
 
 
 def load_map_config(map_name: str) -> Namespace:
@@ -95,6 +96,8 @@ def run_environment_with_plots(
     render_mode="human_slow",
 ):
     with RuntimeVisualizer() as rv:
+        time.sleep(2)
+
         run_environment(
             env=env,
             agent=agent,
@@ -128,7 +131,21 @@ def evaluate(env: F110_SB_Env, agent: Agent, n_eval_episodes=10):
 def load_latest_model(tag: str, index_from_end=0) -> str:
     base_path = f"./models/ppo_agent-{tag}/"
 
-    print(base_path)
+    if not os.path.isdir(base_path):
+        raise Exception("Could not find models folder")
+
+    files = os.listdir(base_path)
+    files = [file for file in files if file.endswith(".zip")]
+
+    file = sorted(files, key=lambda x: int(x.split("_")[-2]), reverse=True)[index_from_end]
+    file = os.path.join(
+        base_path, os.path.dirname(file), os.path.splitext(os.path.basename(file))[0]
+    )
+
+    return file
+
+def load_latest_models(tag: str, n=2) -> typing.List[str]:
+    base_path = f"./models/ppo_agent-{tag}/"
 
     if not os.path.isdir(base_path):
         raise Exception("Could not find models folder")
@@ -136,12 +153,15 @@ def load_latest_model(tag: str, index_from_end=0) -> str:
     files = os.listdir(base_path)
     files = [file for file in files if file.endswith(".zip")]
 
-    file = sorted(files, reverse=True)[index_from_end]
-    file = os.path.join(
-        base_path, os.path.dirname(file), os.path.splitext(os.path.basename(file))[0]
-    )
+    top_files = file = sorted(files, key=lambda x: int(x.split("_")[-2]), reverse=True)[:n]
 
-    return file
+    paths = []
+    for file in top_files:
+        paths.append(os.path.join(
+            base_path, os.path.dirname(file), os.path.splitext(os.path.basename(file))[0]
+        ))
+
+    return paths
 
 
 def save_recording(name: str, actions, rewards, observations, infos):

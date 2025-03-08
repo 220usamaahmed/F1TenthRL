@@ -33,6 +33,11 @@ class F110_SB_Env(gymnasium.Env):
     MAX_STILL_STEPS = 100
     STILL_THRESHOLD = 0.1
     MU = 1.0489 * 0.7
+    C_Sf = 4.718 * 0.7
+    C_Sr = 5.4562 * 0.7
+    M = 3.74
+    I = 0.04712
+
 
     def __init__(
         self,
@@ -96,11 +101,15 @@ class F110_SB_Env(gymnasium.Env):
             "s_min": self._s_min,
             "s_max": self._s_max,
             # "v_min": self._v_min,
-            "v_min": -5,
+            "v_min": -5, # The sim needs this to be neg, not used otherwhere
             "v_max": self._v_max,
             "width": self.width,
             "length": self.length,
-            "mu": self.MU
+            "mu": self.MU,
+            "C_Sf": self.C_Sf,  # C_Sf: Cornering stiffness coefficient, front
+            "C_Sr": self.C_Sr,  # C_Sr: Cornering stiffness coefficient, rear
+            "m": self.M,
+            "I": self.I,
         }
 
         self._reward_parms = reward_params
@@ -229,14 +238,14 @@ class F110_SB_Env(gymnasium.Env):
                 255,
                 0,
                 0,
-                # scan_diffs_normalized[beam_i],
-                0,
+                scan_diffs_normalized[beam_i],
+                # 0,
 
                 255,
                 0,
                 0,
-                # scan_diffs_normalized[beam_i],
-                int(255 * (scan / self._max_range)),
+                scan_diffs_normalized[beam_i],
+                # int(255 * (scan / self._max_range)),
             )
 
         # pos_x_0 = self._previous_obs["poses_x"][self.EGO_IDX]
@@ -561,29 +570,26 @@ class F110_SB_Env(gymnasium.Env):
 class CustomCheckpointCallback(CheckpointCallback):
     def __init__(self, save_freq, save_path, name_prefix, verbose=False):
         super().__init__(save_freq, save_path, name_prefix, verbose)
-        self.checkpoint_done_count = 0
-        self.lap_times = []
+        self.checkpoint_done_counts = deque(maxlen=100)
+        self.lap_times = deque(maxlen=20)
 
     def _on_step(self) -> bool:
-        # Call parent method to handle checkpoint saving
         super()._on_step()
 
-        infos = self.locals["infos"]  # List of info dicts from env step
-        dones = self.locals["dones"]  # List of bools indicating episode end
+        infos = self.locals["infos"]
+        dones = self.locals["dones"]
         
         for i, done in enumerate(dones):
-            if done:  # Only process at episode termination
+            if done:
                 if infos[i]["checkpoint_done"]:
-                    self.checkpoint_done_count += 1
+                    self.checkpoint_done_counts.append(1)
                     self.lap_times.append(infos[i]["lap_time"])
+                else:
+                    self.checkpoint_done_counts.append(0)
 
-                # Log when an episode ends
-                self.logger.record("custom/checkpoint_done_count", self.checkpoint_done_count)
-                if self.lap_times:
-                    self.logger.record("custom/successful_lap_time", np.mean(self.lap_times))
+                self.logger.record("custom/completes_in_last_100_episode", sum(self.checkpoint_done_counts))
 
-                # Reset per-episode variables
-                # self.checkpoint_done_count = 0
-                # self.lap_times = []
+                if len(self.lap_times):
+                    self.logger.record("custom/last_20_completes_avg_laptime", np.mean(list(self.lap_times)))
 
         return True
