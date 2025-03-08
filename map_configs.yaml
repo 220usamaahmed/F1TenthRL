@@ -30,7 +30,7 @@ roemerlager:
 roemerlager-wide:
   map_path: './maps/roemerlager/wide'
   map_ext: '.png'
-  starting_poses: [[0, 0, 0]]
+  starting_poses: [[0, -0.5, 0]]
   max_timesteps: 1000
 
 roemerlager-narrow:

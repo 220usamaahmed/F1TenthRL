@@ -36,7 +36,6 @@ class StickyActionWrapper(F110_SB_Env_Wrapper):
         return self._env.reset(seed=seed, options=options)
 
     def step(self, action) -> typing.Tuple[typing.Any, float, bool, bool, typing.Dict[str, typing.Any]]:
-        pass
         if not self._fine_rendering:
             return self._step(action)
         else:

@@ -13,3 +13,8 @@ class DummyAgent(Agent):
         self, obs: typing.Dict, info: typing.Dict, deterministic=True
     ) -> np.ndarray:
         return np.array([self.steer, self.speed])
+
+        
+        
+
+        

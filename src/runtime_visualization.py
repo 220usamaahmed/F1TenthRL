@@ -76,7 +76,7 @@ class RuntimeVisualizer:
             while not queue.empty():
                 action, observation, reward = queue.get()
 
-                x_lin_vel_data.append(round(observation["linear_vel_x"], 3))
+                # x_lin_vel_data.append(round(observation["linear_vel_x"], 3))
                 # y_lin_vel_data.append(observation["linear_vel_y"])
                 # z_ang_vel_data.append(observation["angular_vel_z"])
 
@@ -85,10 +85,10 @@ class RuntimeVisualizer:
 
                 reward_data.append(round(reward, 3))
 
-            n = len(x_lin_vel_data)
+            n = len(steer_data)
             x = np.linspace(0, n, n)
 
-            x_lin_vel_curve.setData(x, x_lin_vel_data)
+            # x_lin_vel_curve.setData(x, x_lin_vel_data)
             # y_lin_vel_curve.setData(x, y_lin_vel_data)
             # z_ang_vel_curve.setData(x, z_ang_vel_data)
 

@@ -76,10 +76,10 @@ def run_environment(
 
         if verbose:
             print(f"--- t = {t:03} {'-' * 16}")
-            print("Action", action)
-            print("Velocity X", obs["linear_vel_x"])
+            # print("Action", action)
+            # print("Velocity X", obs["linear_vel_x"])
             print("Reward", step_reward)
-            print("Info", info)
+            print("Info", info["pose_theta"], info["lap_count"], info["checkpoint_done"])
 
         if terminated or truncated:
             break

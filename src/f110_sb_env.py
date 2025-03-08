@@ -148,12 +148,20 @@ class F110_SB_Env(gymnasium.Env):
                 "scan": Box(
                     low=0.0,
                     high=1.0,
-                    shape=(self._num_beams + 1,), # Assuming it was 1080, sim has issue with 1081
+                    # shape=(self._num_beams + 1,), # Assuming it was 1080, sim has issue with 1081
+                    shape=(self._num_beams,),
                     dtype=np.float32,
                 ),
-                "linear_vel_x": Box(
-                    low=0.0, high=1.0, shape=(), dtype=np.float32
-                ),
+                "previous_scan": Box(
+                    low=0.0,
+                    high=1.0,
+                    # shape=(self._num_beams + 1,), # Assuming it was 1080, sim has issue with 1081
+                    shape=(self._num_beams,),
+                    dtype=np.float32,
+                )
+                # "linear_vel_x": Box(
+                #     low=0.0, high=1.0, shape=(), dtype=np.float32
+                # ),
             }
         )
 
@@ -213,14 +221,17 @@ class F110_SB_Env(gymnasium.Env):
         if previous_scans is None:
             previous_scans = np.zeros_like(scans)
 
-        p = 4
-        scan_diffs = previous_scans - scans
-        scan_diffs[scan_diffs <= 0] = 0
-        scan_diffs_normalized = self._map_value(scan_diffs, (np.min(scan_diffs), np.max(scan_diffs)), (0, 1)).flatten()
-        scan_diffs_normalized = np.exp(p * scan_diffs_normalized)
-        scan_diffs_normalized = self._map_value(scan_diffs_normalized, (0, np.exp(p)), (0, 255)).astype(int)
+        # p = 4
+        # scan_diffs = previous_scans - scans
+        # scan_diffs[scan_diffs <= 0] = 0
+        # scan_diffs_normalized = self._map_value(scan_diffs, (np.min(scan_diffs), np.max(scan_diffs)), (0, 1)).flatten()
+        # scan_diffs_normalized = np.exp(p * scan_diffs_normalized)
+        # scan_diffs_normalized = self._map_value(scan_diffs_normalized, (0, np.exp(p)), (0, 255)).astype(int)
 
-        scan_diffs_normalized = np.where(scan_diffs_normalized < 128, 0, 255)
+        # scan_diffs_normalized = np.where(scan_diffs_normalized < 128, 0, 255)
+
+        scan_diffs = previous_scans - scans
+        scan_diffs = self._map_value(scan_diffs, (np.min(scan_diffs), np.max(scan_diffs)), (0, 255)).astype(int)
 
         for beam_i in range(0, self._num_beams, 5):
             gl_line = self._beam_gl_lines[beam_i]
@@ -238,14 +249,25 @@ class F110_SB_Env(gymnasium.Env):
                 255,
                 0,
                 0,
-                scan_diffs_normalized[beam_i],
-                # 0,
+                # scan_diffs[beam_i],
+                # scan_diffs_normalized[beam_i],
+                0,
 
                 255,
                 0,
                 0,
-                scan_diffs_normalized[beam_i],
-                # int(255 * (scan / self._max_range)),
+                # scan_diffs[beam_i],
+                # scan_diffs_normalized[beam_i],
+                int(255 * (scan / self._max_range)),
+
+                # scan_diffs[beam_i],
+                # 255 - scan_diffs[beam_i],
+                # 0,
+                # 255,
+                # scan_diffs[beam_i],
+                # 255 - scan_diffs[beam_i],
+                # 0,
+                # 255,
             )
 
         # pos_x_0 = self._previous_obs["poses_x"][self.EGO_IDX]
@@ -270,11 +292,15 @@ class F110_SB_Env(gymnasium.Env):
         self, obs, info, idx=EGO_IDX
     ) -> typing.Tuple[dict, dict]:
         scans = obs["scans"][idx]
-        scans = np.concatenate((scans, [scans[-1]]))
+        # scans = np.concatenate((scans, [scans[-1]]))
 
+        scaled_scans = scans / self._max_range
+        scaled_previous_scans = self._previous_scans[0] / self._max_range if len(self._previous_scans) else scaled_scans
+        
         transformed_obs = {
-            "scan": scans / self._max_range,
-            "linear_vel_x": obs["linear_vels_x"][idx] / self._v_max,
+            "scan": scaled_scans,
+            "previous_scan": scaled_previous_scans
+            # "linear_vel_x": obs["linear_vels_x"][idx] / self._v_max,
         }
 
         transformed_info = {
@@ -299,30 +325,13 @@ class F110_SB_Env(gymnasium.Env):
             reward = +100
         elif obs["collisions"][idx] == 1.0:
             reward = -100
+        elif info["u_turned"]:
+            reward = -50
         elif self._check_truncated():
             reward = -50
         else:
             r_vel = obs["linear_vels_x"][idx] / self._v_max
             return r_vel
-
-            return +0.1
-        
-            # reward = 0
-            distance_to_boundary = np.min(obs["scans"][idx])
-            # r_dist = -10 if distance_to_boundary < 0.3 else 10
-            r_dist = 10 * (distance_to_boundary / self._max_range)
-
-            # velocity = obs["linear_vels_x"][idx]
-            # vel_norm = velocity / self._v_max
-            # r_vel = vel_norm
-
-            r_vel = action[1]
-
-            # steer = abs(self._map_value(action[0], (0, 1), (-1, 1)))
-            # r_steer = -1 * steer
-            r_steer = 0
-
-            reward = r_vel + r_dist + r_steer
 
         return reward
 
@@ -515,6 +524,8 @@ class F110_SB_Env(gymnasium.Env):
         obs, step_reward, done, info = self._env.step(actions)
         truncated = self._check_truncated()
 
+        self._previous_scans.append(np.array(obs["scans"][self.EGO_IDX]))
+
         transformed_obs, transformed_info = self._transform_obs_and_info_for_sb(
             obs, info
         )
@@ -532,8 +543,6 @@ class F110_SB_Env(gymnasium.Env):
 
         self._previous_obs = obs
         self._previous_info = info
-
-        self._previous_scans.append(obs["scans"])
 
         self._previous_poses.append(
             (

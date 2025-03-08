@@ -18,9 +18,8 @@ def get_raceline(env: F110_SB_Env, agent: Agent, deterministic: bool = False):
 
         x = (info.get("pose_x", 0) + 6.67) / 0.05
         y = (info.get("pose_y", 0) + 1.43) / 0.05
-        v = obs.get("linear_vel_x") * 4.3 + 0.7
 
-        raceline.append((x, y, v))
+        raceline.append((x, y))
         # env.render()
 
         if terminated or truncated:
@@ -42,6 +41,41 @@ def get_agent_racelines(env: F110_SB_Env, agent: Agent, n=5):
     return racelines, successes
 
 
+def calc_speed(xs, ys, dt=0.01):
+    vx = np.zeros_like(xs)
+    vy = np.zeros_like(ys)
+
+    vx[1:-1] = (xs[2:] - xs[:-2]) / (2 * dt)
+    vy[1:-1] = (ys[2:] - ys[:-2]) / (2 * dt)
+
+    vx[0] = (xs[1] - xs[0]) / dt
+    vx[-1] = (xs[-1] - xs[-2]) / dt
+    vy[0] = (ys[1] - ys[0]) / dt
+    vy[-1] = (ys[-1] - ys[-2]) / dt
+
+    speed = np.sqrt(vx**2 + vy**2)
+
+    return speed
+
+
+def calc_direction(xs, ys):
+    vx = np.zeros_like(xs)
+    vy = np.zeros_like(ys)
+
+    vx[1:-1] = (xs[2:] - xs[:-2])
+    vy[1:-1] = (ys[2:] - ys[:-2])
+
+    vx[0] = (xs[1] - xs[0])
+    vx[-1] = (xs[-1] - xs[-2])
+    vy[0] = (ys[1] - ys[0])
+    vy[-1] = (ys[-1] - ys[-2])
+
+    direction = np.round(np.degrees(np.arctan2(vx, vy)), 2)
+
+    direction[direction < 0] += 360
+
+    return direction
+
 def plot_racelines(
     map_path: str, env: F110_SB_Env, agents: typing.Dict[str, Agent], per_agent=1, cmap="success"
 ):
@@ -60,19 +94,17 @@ def plot_racelines(
         cbar_displayed = False
 
         for line, success in zip(racelines, successes):
-            xs = [point[0] for point in line]
-            ys = [point[1] for point in line]
-            vs = [point[2] for point in line]
+            xs = np.array([point[0] for point in line])
+            ys = np.array([point[1] for point in line])
                 
             if cmap=="success":
                 axs[i].plot(xs, ys, linewidth=1, c="#81C784" if success else "#E57373")
-            else:
+            elif cmap=="speed":
+                vs = calc_speed(xs * 0.05, ys * 0.05)
                 points = np.array([xs, ys]).T.reshape(-1, 1, 2)
                 segments = np.concatenate([points[:-1], points[1:]], axis=1)
-
-                lc = mcoll.LineCollection(segments, cmap='RdYlGn_r')
-
-                lc.set_array(vs)  # Set color values
+                lc = mcoll.LineCollection(segments, cmap='RdYlGn_r', norm=plt.Normalize(0.7, 5))
+                lc.set_array(vs)
 
                 axs[i].add_collection(lc)
 
@@ -80,6 +112,26 @@ def plot_racelines(
                     cbar = plt.colorbar(lc, ax=axs[i])
                     cbar.set_label("Velocity")
                     cbar_displayed = True
+            elif cmap=="direction":
+                vs = calc_direction(xs * 0.05, ys * 0.05)
+
+                np.set_printoptions(suppress=True)  # Suppress scientific notation
+                np.set_printoptions(precision=2)    # Set decimal precision (optional)
+
+                print(vs)
+
+                points = np.array([xs, ys]).T.reshape(-1, 1, 2)
+                segments = np.concatenate([points[:-1], points[1:]], axis=1)
+                lc = mcoll.LineCollection(segments, cmap='hsv', norm=plt.Normalize(0, 360))
+                lc.set_array(vs)
+
+                axs[i].add_collection(lc)
+
+                if not cbar_displayed:
+                    cbar = plt.colorbar(lc, ax=axs[i])
+                    cbar.set_label("Direction")
+                    cbar_displayed = True
+
 
         axs[i].imshow(map, cmap="gray")
         axs[i].set_title(name.split("/")[-1])

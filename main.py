@@ -90,7 +90,7 @@ def run(config_name: str, model_tag: str, index_from_end: int, runs: int, sticky
     for _ in range(runs):
         ppo_agent = PPOAgent.create_from_saved_model(model_filepath)
         # env.enable_recording()
-        run_environment_with_plots(env, ppo_agent, deterministic=False, verbose=False)
+        run_environment_with_plots(env, ppo_agent, deterministic=False, verbose=True)
 
 def plot_raceline(config_name: str, model_tag: str, index_from_end: int):
     print(f"Plotting racelines with index_from_end={index_from_end}")
@@ -110,16 +110,17 @@ def plot_raceline(config_name: str, model_tag: str, index_from_end: int):
         f"{config.map_path}{config.map_ext}",
         env,
         agents,
+        # cmap="direction",
         cmap="speed",
         per_agent=1
     )
 
-def run_dummy_agent(speed: float, steer: float):
+def run_dummy_agent(config_name: str, speed: float, steer: float):
     print(f"Running dummy agent with speed={speed}, steer={steer}")
 
-    env = get_env(sticky_actions=True, multi_map=False)
-    dummy_agent = DummyAgent(steer=1.0, speed=0.2)
-    run_environment(env, dummy_agent, verbose=False)
+    env = get_env(config_name=config_name, sticky_actions=True, multi_map=False, fine_rendering=True)
+    dummy_agent = DummyAgent(steer=steer, speed=speed)
+    run_environment(env, dummy_agent, verbose=True)
 
 def run_playback_agent(save_file: str):
     print(f"Running playback agent with save_file={save_file}")
@@ -186,10 +187,11 @@ def main():
     dummy_parser = subparsers.add_parser("run_dummy_agent")
     dummy_parser.add_argument("--speed", type=float, required=True)
     dummy_parser.add_argument("--steer", type=float, required=True)
-    dummy_parser.set_defaults(func=lambda args: run_dummy_agent(args.speed, args.steer))
+    dummy_parser.add_argument("--config_name", type=str, required=False, default="roemerlager")
+    dummy_parser.set_defaults(func=lambda args: run_dummy_agent(args.config_name, args.speed, args.steer))
 
     playback_parser = subparsers.add_parser("run_playback_agent")
-    dummy_parser.add_argument("--save_file", type=str, required=True)
+    playback_parser.add_argument("--save_file", type=str, required=True)
     playback_parser.set_defaults(func=lambda args: run_playback_agent(args.save_file))
     
     compare_parser = subparsers.add_parser("compare_racelines")

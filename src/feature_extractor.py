@@ -14,7 +14,7 @@ class CustomCombinedExtractor(BaseFeaturesExtractor):
         total_concat_size = 0
 
         for key, subspace in observation_space.spaces.items():
-            if key == "scan":
+            if key == "scan" or key == "previous_scan":
                 # For the laser scan data
                 extractors[key] = nn.Sequential(
                     nn.Linear(subspace.shape[0], 128),

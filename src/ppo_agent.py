@@ -66,6 +66,7 @@ class PPOAgent(SBAgent):
         self, obs: typing.Dict, info: typing.Dict, deterministic: bool = False
     ) -> np.ndarray:
         action, _ = self._model.predict(obs, deterministic=deterministic)
+
         return action
 
     def learn(self, model_tag: str, total_timesteps=1000, save_freq=1000, save_path="./models/"):
