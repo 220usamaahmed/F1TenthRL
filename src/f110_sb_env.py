@@ -37,6 +37,7 @@ class F110_SB_Env(gymnasium.Env):
     C_Sr = 5.4562 * 0.7
     M = 3.74
     I = 0.04712
+    RECALL = 30
 
 
     def __init__(
@@ -76,7 +77,7 @@ class F110_SB_Env(gymnasium.Env):
         self._previous_actions = None
 
         self._previous_poses = deque(maxlen=self.MAX_STILL_STEPS)
-        self._previous_scans = deque(maxlen=20)
+        self._previous_scans = deque(maxlen=self.RECALL)
 
         self._num_beams = lidar_params.get("num_beams", F110_SB_Env.DEFAULT_NUM_BEAMS)
         self._fov = lidar_params.get("fov", F110_SB_Env.DEFAULT_FOV)
@@ -258,7 +259,7 @@ class F110_SB_Env(gymnasium.Env):
                 0,
                 # scan_diffs[beam_i],
                 # scan_diffs_normalized[beam_i],
-                int(255 * (scan / self._max_range)),
+                int(255 * min(1, scan / 5)),
 
                 # scan_diffs[beam_i],
                 # 255 - scan_diffs[beam_i],

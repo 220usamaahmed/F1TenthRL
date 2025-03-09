@@ -144,7 +144,7 @@ def load_latest_model(tag: str, index_from_end=0) -> str:
 
     return file
 
-def load_latest_models(tag: str, n=2) -> typing.List[str]:
+def load_latest_models(tag: str, n=2, s=0) -> typing.List[str]:
     base_path = f"./models/ppo_agent-{tag}/"
 
     if not os.path.isdir(base_path):
@@ -153,10 +153,10 @@ def load_latest_models(tag: str, n=2) -> typing.List[str]:
     files = os.listdir(base_path)
     files = [file for file in files if file.endswith(".zip")]
 
-    top_files = file = sorted(files, key=lambda x: int(x.split("_")[-2]), reverse=True)[:n]
+    top_files = file = sorted(files, key=lambda x: int(x.split("_")[-2]), reverse=True)[:n + (n - 1) * s]
 
     paths = []
-    for file in top_files:
+    for file in top_files[::s]:
         paths.append(os.path.join(
             base_path, os.path.dirname(file), os.path.splitext(os.path.basename(file))[0]
         ))

@@ -100,11 +100,11 @@ def plot_raceline(config_name: str, model_tag: str, index_from_end: int):
 
     agents = {}
 
-    for tag in model_tag.split(","):
+    for i, tag in enumerate(model_tag.split(",")):
         filepath = load_latest_model(tag, index_from_end=index_from_end)
         print("model: ", filepath)
         name = filepath.split("__")[-1]
-        agents[name] = PPOAgent.create_from_saved_model(filepath)
+        agents[str(i)] = PPOAgent.create_from_saved_model(filepath)
 
     plot_racelines(
         f"{config.map_path}{config.map_ext}",
@@ -129,12 +129,12 @@ def run_playback_agent(save_file: str):
     playback_agent = PlaybackAgent(recording_path=save_file)
     run_environment(env, playback_agent, deterministic=True, verbose=True)
 
-def compare_racelines(config_name, model_tag: str, last_n: int):
+def compare_racelines(config_name, model_tag: str, last_n: int, skip: int):
     print(f"Comparing racelines with models_path={model_tag}, last_n={last_n}")
 
     env = get_env(config_name=config_name, sticky_actions=True, multi_map=False, fine_rendering=True)
     config = load_map_config(config_name)
-    paths = load_latest_models(model_tag)
+    paths = load_latest_models(model_tag, n=last_n, s=skip)
 
     agents = {}
 
@@ -198,7 +198,8 @@ def main():
     compare_parser.add_argument("--config_name", type=str, required=False, default="roemerlager")
     compare_parser.add_argument("--model_tag", type=str, required=True)
     compare_parser.add_argument("--last_n", type=int, required=False, default=2)
-    compare_parser.set_defaults(func=lambda args: compare_racelines(args.config_name, args.model_tag, args.last_n))
+    compare_parser.add_argument("--skip", type=int, required=False, default=0)
+    compare_parser.set_defaults(func=lambda args: compare_racelines(args.config_name, args.model_tag, args.last_n, args.skip))
 
     refine_parser = subparsers.add_parser("refine")
     refine_parser.set_defaults(func=lambda _: run_refinement())
