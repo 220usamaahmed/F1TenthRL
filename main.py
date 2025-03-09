@@ -92,10 +92,10 @@ def run(config_name: str, model_tag: str, index_from_end: int, runs: int, sticky
         # env.enable_recording()
         run_environment_with_plots(env, ppo_agent, deterministic=False, verbose=True)
 
-def plot_raceline(config_name: str, model_tag: str, index_from_end: int):
-    print(f"Plotting racelines with index_from_end={index_from_end}")
+def plot_raceline(config_name: str, model_tag: str, index_from_end: int, sticky_actions: bool, multi_map: bool):
+    print(f"Plotting racelines with index_from_end={index_from_end}, sticky_actions={sticky_actions}, multi_map={multi_map}")
 
-    env = get_env(config_name=config_name, sticky_actions=True, multi_map=False, fine_rendering=True)
+    env = get_env(config_name=config_name, sticky_actions=sticky_actions, multi_map=multi_map, fine_rendering=True)
     config = load_map_config(config_name)
 
     agents = {}
@@ -163,7 +163,7 @@ def main():
     subparsers = parser.add_subparsers(dest="command", required=True)
     
     train_parser = subparsers.add_parser("train")
-    train_parser.add_argument("--sticky_actions", type=bool, required=False, default=True)
+    train_parser.add_argument("--sticky_actions", type=bool, required=False, default=False)
     train_parser.add_argument("--multi_map", type=bool, required=False, default=False)
     train_parser.add_argument("--timesteps", type=int, required=False, default=2000000)
     train_parser.add_argument("--save_freq", type=int, required=False, default=100000)
@@ -182,7 +182,9 @@ def main():
     plot_parser.add_argument("--config_name", type=str, required=False, default="roemerlager")
     plot_parser.add_argument("--model_tag", type=str, required=True)
     plot_parser.add_argument("--index_from_end", type=int, required=False, default=0)
-    plot_parser.set_defaults(func=lambda args: plot_raceline(args.config_name, args.model_tag, args.index_from_end, ))
+    plot_parser.add_argument("--sticky_actions", type=bool, required=False, default=False)
+    plot_parser.add_argument("--multi_map", type=bool, required=False, default=False)
+    plot_parser.set_defaults(func=lambda args: plot_raceline(args.config_name, args.model_tag, args.index_from_end, args.sticky_actions, args.multi_map))
     
     dummy_parser = subparsers.add_parser("run_dummy_agent")
     dummy_parser.add_argument("--speed", type=float, required=True)
